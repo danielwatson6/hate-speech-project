@@ -1,0 +1,11 @@
+# This project
+data/
+model_files/
+
+# Python
+*.py[cod]
+__pycache__/
+
+# macOS
+.DS_Store
+Icon?

@@ -1,5 +1,6 @@
 # This project
 data/
+env/
 model_files/
 
 # Python

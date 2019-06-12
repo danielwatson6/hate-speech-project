@@ -18,4 +18,4 @@ Whenever working with python, run `source env/bin/activate` in the current termi
 
 ## Datasets
 
-- [Stormfront dataset](https://github.com/aitor-garcia-p/hate-speech-dataset)
+Download the [Stormfront dataset](https://github.com/aitor-garcia-p/hate-speech-dataset) and place the `all_files` directory and the `annotations_metadata.csv` file inside this repository's `data` directory. Rename `all_files` to `stormfront`, and `annotations_metadata.csv` to `stormfront.csv`.

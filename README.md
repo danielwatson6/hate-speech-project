@@ -13,8 +13,13 @@ pip install -r requirements.txt
 
 ## Workflow
 
+### Python
+
 Whenever working with python, run `source env/bin/activate` in the current terminal session. If new packages are installed, update the list of dependencies by running `pip freeze > requirements.txt`.
 
+### Embedding visualization
+
+After running a script that produces visualizations (for example, `centroids.py`), go to [projector.tensorflow.org](http://projector.tensorflow.org) and upload the TSV files inside the `projector` directory.
 
 ## Datasets
 

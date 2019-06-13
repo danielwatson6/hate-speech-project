@@ -1,7 +1,9 @@
 """Miscellaneous methods."""
 
-from os.path import join
+import os.path
 import re
+
+from gensim.models import KeyedVectors
 
 
 def tokenize(s):
@@ -12,7 +14,7 @@ def tokenize(s):
 
 
 def chain(*gen_fns):
-    """Similar to itertools.chain but returns callables."""
+    """Similar to `itertools.chain` but takes and returns callables."""
 
     def _chain():
         for it in gen_fns:
@@ -22,17 +24,29 @@ def chain(*gen_fns):
     return _chain
 
 
+def load_word2vec():
+    """Get a word2vec model, ensuring fast loading."""
+    path = os.path.join("data", "word2vec")
+    if os.path.exists(path):
+        w2v = KeyedVectors.load(path, mmap="r")
+    else:
+        w2v = KeyedVectors.load_word2vec_format(os.path.join(), binary=True)
+        w2v.init_sims(replace=True)
+        w2v.save(path)
+    return w2v
+
+
 def stormfront_gen():
     """Generator for the stormfront dataset."""
     labels = {"noHate": 0, "hate": 1}
-    with open(join("data", "stormfront.csv")) as f:
+    with open(os.path.join("data", "stormfront.csv")) as f:
         f.readline()  # skip the csv header
         for line in f:
             line = line.split(",")  # line[0] = filename, line[4] = label
             label = line[4].strip()
             if label not in labels:
                 continue
-            with open(join("data", "stormfront", line[0] + ".txt")) as lf:
+            with open(os.path.join("data", "stormfront", line[0] + ".txt")) as lf:
                 phrase = lf.readline()
             yield tokenize(phrase), labels[label]
 
@@ -40,7 +54,7 @@ def stormfront_gen():
 def twitter_gen():
     """Generator for the twitter dataset."""
     labels = [1, 0, 0]
-    with open(join("data", "twitter.csv")) as f:
+    with open(os.path.join("data", "twitter.csv")) as f:
         f.readline()  # skip the csv header
         for line in f:
             line = line.split(",")

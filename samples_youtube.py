@@ -17,6 +17,9 @@ if __name__ == "__main__":
     channels = list({re.sub(r"([a-z\.]+)[0-9]*", r"\1", f) for f in os.listdir(path)})
     random.shuffle(channels)
 
+    video_file = open(os.path.join("data", "youtube_video_samples.txt"), "w")
+    comment_file = open(os.path.join("data", "youtube_comment_samples.txt"), "w")
+
     with open(os.path.join("data", "youtube_samples.txt"), "w") as f:
         acc = []
         for channel in channels[:num_channels]:
@@ -28,7 +31,12 @@ if __name__ == "__main__":
                 # 'video_snippet', 'video', 'comment', 'reply', 'video_op',
                 # 'comment_op', 'reply_op', 'date_posted', 'content', 'date_scraped'
                 for row in df.iterrows():
-                    acc.append(row["content"])
+                    if int(row["video"]) == 1:
+                        video_file.write(
+                            " ".join(utils.tokenize(row["content"])) + "\n"
+                        )
+                    else:
+                        acc.append(row["content"])
 
                     if len(acc) >= num_videos_per_channel:
                         break
@@ -38,6 +46,9 @@ if __name__ == "__main__":
 
             if len(acc) >= num_videos_per_channel:
                 for comment in acc:
-                    f.write(" ".join(utils.tokenize(comment)) + "\n")
+                    comment_file.write(" ".join(utils.tokenize(comment)) + "\n")
                 acc = []
                 continue
+
+    video_file.close()
+    commment_file.close()

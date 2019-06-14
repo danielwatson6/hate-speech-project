@@ -53,7 +53,7 @@ if __name__ == "__main__":
     print("||sn - tn|| =", np.linalg.norm(sn - tn))
     print("||sh - th|| =", np.linalg.norm(sh - th))
     print("||sn + tn - sh - th|| =", np.linalg.norm(sn + tn - sh - th))
-    print("||sn + sh - sh - th|| =", np.linalg.norm(sn + tn - sh - th))
+    print("||sn + sh - tn - th|| =", np.linalg.norm(sn + sh - tn - th))
     print()
 
     print("Cosine distances")

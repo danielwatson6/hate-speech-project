@@ -23,7 +23,7 @@ if __name__ == "__main__":
     with open(os.path.join("data", "youtube_samples.txt"), "w") as f:
         acc = []
         for channel in channels[:num_channels]:
-            channel_files = [c for c in channels if c.startswith(channel)]
+            channel_files = [c for c in os.listdir(path) if c.startswith(channel)]
 
             for cf in channel_files:
                 df = pd.read_csv(os.path.join(path, cf))
@@ -31,9 +31,10 @@ if __name__ == "__main__":
                 # 'video_snippet', 'video', 'comment', 'reply', 'video_op',
                 # 'comment_op', 'reply_op', 'date_posted', 'content', 'date_scraped'
                 for row in df.iterrows():
+                    row = row[1]
                     if int(row["video"]) == 1:
                         video_file.write(
-                            " ".join(utils.tokenize(row["content"])) + "\n"
+                            " ".join(utils.tokenize(str(row["content"]))) + "\n"
                         )
                     else:
                         acc.append(row["content"])
@@ -46,7 +47,7 @@ if __name__ == "__main__":
 
             if len(acc) >= num_videos_per_channel:
                 for comment in acc:
-                    comment_file.write(" ".join(utils.tokenize(comment)) + "\n")
+                    comment_file.write(" ".join(utils.tokenize(str(comment))) + "\n")
                 acc = []
                 continue
 

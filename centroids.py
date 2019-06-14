@@ -1,10 +1,14 @@
 import os
 
 import numpy as np
-from scipy.spatial.distance import cosine
+from scipy.spatial.distance import cosine as cos_dist
 import tensorflow as tf
 
 import utils
+
+
+def norm_dist(u, v):
+    return np.linalg.norm(u / np.linalg.norm(u) - v / np.linalg.norm(v))
 
 
 if __name__ == "__main__":
@@ -27,7 +31,7 @@ if __name__ == "__main__":
                     stormfront_vals[label].append(w2v[token])
                     acc.append(w2v[token])
             if len(acc) > 0:
-                f.write(f"{label}]\t{' '.join(tokens)}\n")
+                f.write(f"{label}\t{' '.join(tokens)}\n")
                 embedding_matrix.append(avg_embed(acc))
         stormfront_vals = list(map(avg_embed, stormfront_vals))
 
@@ -36,33 +40,66 @@ if __name__ == "__main__":
             for token in tokens:
                 if token in w2v:
                     twitter_vals[label].append(w2v[token])
+                    acc.append(w2v[token])
             if len(acc) > 0:
                 f.write(f"{label}\t{' '.join(tokens)}\n")
                 embedding_matrix.append(avg_embed(acc))
         twitter_vals = list(map(avg_embed, twitter_vals))
+
+        youtube_vals = []
+        rf = open(os.path.join("data", "youtube_samples.txt"))
+        for line in rf:
+            acc = []
+            tokens = utils.tokenize(line)
+            for token in tokens:
+                if token in w2v:
+                    youtube_vals.append(w2v[token])
+                    acc.append(w2v[token])
+            if len(acc) > 0:
+                f.write(f"2\t{' '.join(tokens)}\n")
+                embedding_matrix.append(avg_embed(acc))
+        youtube_vals = avg_embed(youtube_vals)
+        rf.close()
 
     g_to_np = lambda x: np.array(list(x))
     sn = g_to_np(stormfront_vals[0])
     sh = g_to_np(stormfront_vals[1])
     tn = g_to_np(twitter_vals[0])
     th = g_to_np(twitter_vals[1])
+    y = g_to_np(youtube_vals)
 
-    print("Distances")
-    print("||sn - sh|| =", np.linalg.norm(sn - sh))
-    print("||tn - th|| =", np.linalg.norm(tn - th))
-    print("||sn - tn|| =", np.linalg.norm(sn - tn))
-    print("||sh - th|| =", np.linalg.norm(sh - th))
-    print("||sn + tn - sh - th|| =", np.linalg.norm(sn + tn - sh - th))
-    print("||sn + sh - tn - th|| =", np.linalg.norm(sn + sh - tn - th))
+    print("Distances between normalized vectors")
+    print("||sn - sh|| =", norm_dist(sn, sh))
+    print("||tn - th|| =", norm_dist(tn, th))
+    print("||sn - tn|| =", norm_dist(sn, tn))
+    print("||sh - th|| =", norm_dist(sh, th))
+    print("||(sn + tn) - (sh + th)|| =", norm_dist(sn + tn, sh + th))
+    print("||(sn + sh) - (tn + th)|| =", norm_dist(sn + sh, tn + th))
+    print("||y - sn|| = ", norm_dist(y, sn))
+    print("||y - sh|| = ", norm_dist(y, sh))
+    print("||y - tn|| = ", norm_dist(y, tn))
+    print("||y - th|| = ", norm_dist(y, th))
+    print("||y - (sn + sh)|| = ", norm_dist(y, sn + sh))
+    print("||y - (tn + th)|| = ", norm_dist(y, tn + th))
+    print("||y - (sn + tn)|| = ", norm_dist(y, sn + tn))
+    print("||y - (sh + th)|| = ", norm_dist(y, sh + th))
     print()
 
     print("Cosine distances")
-    print("cos_dist(sn, sh)", cosine(sn, sh))
-    print("cos_dist(tn, th)", cosine(tn, th))
-    print("cos_dist(sn, tn)", cosine(sn, tn))
-    print("cos_dist(sh, th)", cosine(sh, th))
-    print("cos_dist(sn + tn, sh + th)", cosine(sn + tn, sh + th))
-    print("cos_dist(sn + sh, tn + th)", cosine(sn + sh, tn + th))
+    print("cos_dist(sn, sh) = ", cos_dist(sn, sh))
+    print("cos_dist(tn, th) = ", cos_dist(tn, th))
+    print("cos_dist(sn, tn) = ", cos_dist(sn, tn))
+    print("cos_dist(sh, th) = ", cos_dist(sh, th))
+    print("cos_dist(sn + tn, sh + th) = ", cos_dist(sn + tn, sh + th))
+    print("cos_dist(sn + sh, tn + th) = ", cos_dist(sn + sh, tn + th))
+    print("cos_dist(y, sn) = ", cos_dist(y, sn))
+    print("cos_dist(y, sh) = ", cos_dist(y, sh))
+    print("cos_dist(y, tn) = ", cos_dist(y, tn))
+    print("cos_dist(y, th) = ", cos_dist(y, th))
+    print("cos_dist(y, sn + sh) = ", cos_dist(y, sn + sh))
+    print("cos_dist(y, tn + th) = ", cos_dist(y, tn + th))
+    print("cos_dist(y, sn + tn) = ", cos_dist(y, sn + tn))
+    print("cos_dist(y, sh + th) = ", cos_dist(y, sh + th))
     print()
 
     with open(os.path.join("projector", "embeddings.tsv"), "w") as f:

@@ -73,6 +73,8 @@ def get_missing_comment_data(comment):
 
     if "parent_id" in response["snippet"]:
         comment["parent_comment_id"] = response["snippet"]["parent_id"]
+    else:
+        comment["parent_comment_id"] = ""
 
     comment["op_channel_id"] = response["snippet"]["authorChannelId"]["value"]
     comment["like_count"] = response["snippet"]["likeCount"]

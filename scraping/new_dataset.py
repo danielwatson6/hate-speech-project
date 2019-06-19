@@ -16,6 +16,7 @@ COMMENT_KEYS = (
     "like_count",
     "content",
     "date_posted",
+    "date_scraped",
 )
 VIDEO_KEYS = (
     "id",

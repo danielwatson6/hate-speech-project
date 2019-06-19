@@ -13,7 +13,6 @@ COMMENT_KEYS = (
     "parent_comment_id",
     "video_id",
     "op_channel_id",
-    "video_channel_id",
     "like_count",
     "content",
     "date_posted",
@@ -51,7 +50,6 @@ def get_missing_comment_data(comment):
 
     parent_comment_id
     op_channel_id
-    video_channel_id
     like_count
 
     """
@@ -76,8 +74,7 @@ def get_missing_comment_data(comment):
         comment["parent_comment_id"] = response["snippet"]["parent_id"]
 
     comment["op_channel_id"] = response["snippet"]["authorChannelId"]["value"]
-    comment["video_channel_id"] = response["snippet"]["channelId"]
-    comment["like_count"] = response["snippet"]["like_count"]
+    comment["like_count"] = response["snippet"]["likeCount"]
     comment["date_scraped"] = datetime.now().isoformat()
 
 
@@ -198,12 +195,11 @@ if __name__ == "__main__":
 
                 get_missing_comment_data(comment)
 
-                for channel_id in [row["op_channel_id"], row["video_channel_id"]]:
-                    if channel_id not in channels:
-                        if int(row["reply"]):
-                            channels[channel_id] = row["reply_op"]
-                        else:
-                            channels[channel_id] = row["comment_op"]
+                if row["op_channel_id"] not in channels:
+                    if int(row["reply"]):
+                        channels[row["op_channel_id"]] = row["reply_op"]
+                    else:
+                        channels[row["op_channel_id"]] = row["comment_op"]
                 writer_comments.writerow(comment)
                 print_row(comment, COMMENT_KEYS)
 

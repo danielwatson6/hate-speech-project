@@ -63,3 +63,13 @@ def twitter_gen():
                 yield tokenize(tweet), labels[int(line[5])]
             except:  # catch the last line
                 ...
+
+
+def youtube_samples_gen():
+    """Generator for the youtube samples."""
+    with open(os.path.join("data", "youtube_video_samples.txt")) as f:
+        for line in f:
+            yield tokenize(line), 0
+    with open(os.path.join("data", "youtube_comment_samples.txt")) as f:
+        for line in f:
+            yield tokenize(line), 1

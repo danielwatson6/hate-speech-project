@@ -179,8 +179,8 @@ if __name__ == "__main__":
                 }
                 get_missing_video_data(video)
 
-                if row["channel_id"] not in channels:
-                    channels[row["channel_id"]] = row["video_op"]
+                if video["channel_id"] not in channels:
+                    channels[video["channel_id"]] = row["video_op"]
 
                 writer_videos.writerow(video)
                 print_row(video, VIDEO_KEYS)
@@ -195,11 +195,11 @@ if __name__ == "__main__":
 
                 get_missing_comment_data(comment)
 
-                if row["op_channel_id"] not in channels:
+                if comment["op_channel_id"] not in channels:
                     if int(row["reply"]):
-                        channels[row["op_channel_id"]] = row["reply_op"]
+                        channels[comment["op_channel_id"]] = row["reply_op"]
                     else:
-                        channels[row["op_channel_id"]] = row["comment_op"]
+                        channels[comment["op_channel_id"]] = row["comment_op"]
                 writer_comments.writerow(comment)
                 print_row(comment, COMMENT_KEYS)
 

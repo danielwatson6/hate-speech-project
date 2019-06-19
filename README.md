@@ -21,6 +21,12 @@ Ping @danielwatson6 for access to the YouTube corpus. Set up an environment vari
 
 Whenever working with python, run `source env/bin/activate` in the current terminal session. If new packages are installed, update the list of dependencies by running `pip freeze > requirements.txt`.
 
+Scripts in subdirectories (e.g. those in `scraping`) should be run as modules to avoid path and module conflicts:
+
+```bash
+python -m scraping.new_dataset  # instead of `python scraping/new_dataset.py` or `cd scraping && python new_dataset.py`
+```
+
 ### Embedding visualization
 
 After running a script that produces visualizations (for example, `centroids.py`), go to [projector.tensorflow.org](http://projector.tensorflow.org) and upload the TSV files inside the `projector` directory.

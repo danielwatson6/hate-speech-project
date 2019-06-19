@@ -123,9 +123,13 @@ if __name__ == "__main__":
     # Keep a dict to query channel by ids without repetition.
     channels = {}
 
+    first = False
     for filename in os.listdir(path_orig):
         rows = pd.read_csv(os.path.join(path_orig, filename)).iterrows()
-        next(rows)  # skip CSV header
+        if not first:
+            first = True
+            continue
+
         for row in rows:
             if int(row["video"]):
                 video = {

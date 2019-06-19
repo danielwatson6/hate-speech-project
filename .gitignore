@@ -2,6 +2,7 @@
 data/
 env/
 model_files/
+scraping/api_key
 
 # Python
 *.py[cod]

@@ -55,14 +55,16 @@ def get_missing_comment_data(comment):
     like_count
 
     """
-    payload = dict(
-        id=comment["id"],
-        part="snippet,statistics",
-        key=API_KEY,
-        maxResults=1,
-        textFormat="plainText",
-    )
-    response = requests.get(COMMENT_THREADS_URL, params=payload).json()
+    response = requests.get(
+        "https://www.googleapis.com/youtube/v3/comments",
+        params=dict(
+            id=comment["id"],
+            part="snippet,statistics",
+            key=API_KEY,
+            maxResults=1,
+            textFormat="plainText",
+        ),
+    ).json()
 
     print(response)
     exit()
@@ -131,6 +133,7 @@ if __name__ == "__main__":
             continue
 
         for row in rows:
+            row = row[1]
             if int(row["video"]):
                 video = {
                     "id": row["video_id"],

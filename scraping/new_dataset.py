@@ -59,16 +59,25 @@ def get_missing_comment_data(comment):
         "https://www.googleapis.com/youtube/v3/comments",
         params=dict(
             id=comment["id"],
-            part="snippet,statistics",
+            part="snippet",
             key=API_KEY,
             maxResults=1,
             textFormat="plainText",
         ),
     ).json()
 
-    print(response)
-    exit()
+    # TODO: better error handling
+    if "items" not in response:
+        print(response)
+        exit()
+    response = response["items"][0]
 
+    if "parent_id" in response["snippet"]:
+        comment["parent_comment_id"] = response["snippet"]["parent_id"]
+
+    comment["op_channel_id"] = response["snippet"]["authorChannelId"]["value"]
+    comment["video_channel_id"] = response["snippet"]["channelId"]
+    comment["like_count"] = response["snippet"]["like_count"]
     comment["date_scraped"] = datetime.now().isoformat()
 
 
@@ -82,7 +91,28 @@ def get_missing_video_data(video):
     location
 
     """
+    response = requests.get(
+        "https://www.googleapis.com/youtube/v3/videos",
+        params=dict(
+            id=video["id"],
+            part="snippet,statistics,recordingDetails",
+            key=API_KEY,
+            maxResults=1,
+            textFormat="plainText",
+        ),
+    ).json()
 
+    # TODO: better error handling
+    if "items" not in response:
+        print(response)
+        exit()
+    response = response["items"][0]
+
+    video["channel_id"] = response["snippet"]["channel_id"]
+    video["like_count"] = response["statistics"]["like_count"]
+    video["dislike_count"] = response["statistics"]["dislike_count"]
+    video["view_count"] = response["statistics"]["view_count"]
+    video["location"] = response["recordingDetails"]["location"]
     video["date_scraped"] = datetime.now().isoformat()
 
 
@@ -103,6 +133,15 @@ def get_missing_channel_data(channel):
     """
 
     channel["date_scraped"] = datetime.now().isoformat()
+
+
+def print_row(row, keys):
+    for key in keys:
+        text = str(row[key])
+        if len(text) > 12:
+            text = text[:12] + "..."
+        print(text + "\t", end="")
+    print()
 
 
 if __name__ == "__main__":
@@ -139,6 +178,7 @@ if __name__ == "__main__":
                     "id": row["video_id"],
                     "title": row["video_title"],
                     "description": row["video_snippet"],
+                    "date_posted": row["date_posted"],
                 }
                 get_missing_video_data(video)
 
@@ -146,6 +186,7 @@ if __name__ == "__main__":
                     channels[row["channel_id"]] = row["video_op"]
 
                 writer_videos.writerow(video)
+                print_row(video, VIDEO_KEYS)
 
             else:
                 comment = {
@@ -157,12 +198,14 @@ if __name__ == "__main__":
 
                 get_missing_comment_data(comment)
 
-                if row["op_channel_id"] not in channels:
-                    if int(row["reply"]):
-                        channels[row["op_channel_id"]] = row["reply_op"]
-                    else:
-                        channels[row["op_channel_id"]] = row["comment_op"]
+                for channel_id in [row["op_channel_id"], row["video_channel_id"]]:
+                    if channel_id not in channels:
+                        if int(row["reply"]):
+                            channels[channel_id] = row["reply_op"]
+                        else:
+                            channels[channel_id] = row["comment_op"]
                 writer_comments.writerow(comment)
+                print_row(comment, COMMENT_KEYS)
 
     file_comments.close()
     file_videos.close()

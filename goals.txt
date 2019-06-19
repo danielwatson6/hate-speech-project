@@ -1,7 +1,10 @@
 does the video incite "extreme rhetoric" at all?
+
 what is the nature of the incitement?
     - repetition of what is being said?
+    - simplism (e.g. count num adverbs)
     - annotations?
+
 does incitement happen at different rates for different users?
     - frequent vs infrequent users?
     - part vs not part of "communities"?

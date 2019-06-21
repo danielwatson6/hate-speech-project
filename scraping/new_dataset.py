@@ -1,6 +1,7 @@
 from csv import DictWriter
 from datetime import datetime
 import os
+import time
 
 import pandas as pd
 import requests
@@ -46,7 +47,7 @@ CHANNEL_KEYS = (
 )
 
 
-def get_missing_comment_data(comment):
+def get_missing_comment_data(comments):
     """Missing keys:
 
     parent_comment_id
@@ -57,34 +58,40 @@ def get_missing_comment_data(comment):
     response = requests.get(
         "https://www.googleapis.com/youtube/v3/comments",
         params=dict(
-            id=comment["id"],
+            id=",".join([c["id"] for c in comments]),
             part="snippet",
             key=API_KEY,
             textFormat="plainText",
         ),
     ).json()
 
-    # TODO: better error handling
-    if "items" not in response or len(response["items"]) == 0:
+    # Quota error.
+    if "items" not in response:
+        print("Quota error was likely encountered, will try again in 5min:")
         print(response)
-        raise KeyError("No items in response")
-    response = response["items"][0]
+        time.sleep(300)
+        return get_missing_comment_data(comments)
 
-    if "parent_id" in response["snippet"]:
-        comment["parent_comment_id"] = response["snippet"]["parent_id"]
-    else:
-        comment["parent_comment_id"] = ""
-    
-    try:
-        comment["op_channel_id"] = response["snippet"]["authorChannelId"]["value"]
-        comment["like_count"] = response["snippet"]["likeCount"]
-        comment["date_scraped"] = datetime.now().isoformat()
-    except KeyError:
-        print(response)
-        raise
+    result = []
+    for c in comments:
+        try:
+            if "parent_id" in response["snippet"]:
+                c["parent_comment_id"] = response["snippet"]["parent_id"]
+            else:
+                c["parent_comment_id"] = ""
+            c["op_channel_id"] = response["snippet"]["authorChannelId"]["value"]
+            c["like_count"] = response["snippet"]["likeCount"]
+
+        except KeyError:
+            continue
+
+        c["date_scraped"] = datetime.now().isoformat()
+        result.append(c)
+
+    return result
 
 
-def get_missing_video_data(video):
+def get_missing_video_data(videos):
     """Missing keys:
 
     channel_id
@@ -96,28 +103,35 @@ def get_missing_video_data(video):
     response = requests.get(
         "https://www.googleapis.com/youtube/v3/videos",
         params=dict(
-            id=video["id"],
+            id=",".join([v["id"] for v in videos]),
             part="snippet,statistics",
             key=API_KEY,
             textFormat="plainText",
         ),
     ).json()
 
-    # TODO: better error handling
-    if "items" not in response or len(response["items"]) == 0:
+    # Quota error.
+    if "items" not in response:
+        print("Quota error was likely encountered, will try again in 5min:")
         print(response)
-        raise KeyError("No items in response")
-    response = response["items"][0]
-    
-    try:
-        video["channel_id"] = response["snippet"]["channelId"]
-        video["like_count"] = response["statistics"]["likeCount"]
-        video["dislike_count"] = response["statistics"]["dislikeCount"]
-        video["view_count"] = response["statistics"]["viewCount"]
-        video["date_scraped"] = datetime.now().isoformat()
-    except KeyError:
-        print(response)
-        raise
+        time.sleep(300)
+        return get_missing_video_data(videos)
+
+    result = []
+    for v in videos:
+        try:
+            v["channel_id"] = response["snippet"]["channelId"]
+            v["like_count"] = response["statistics"]["likeCount"]
+            v["dislike_count"] = response["statistics"]["dislikeCount"]
+            v["view_count"] = response["statistics"]["viewCount"]
+
+        except KeyError:
+            continue
+
+        v["date_scraped"] = datetime.now().isoformat()
+        result.append(v)
+
+    return result
 
 
 def get_missing_channel_data(channel):
@@ -171,6 +185,8 @@ if __name__ == "__main__":
     for filename in os.listdir(path_orig):
         rows = pd.read_csv(os.path.join(path_orig, filename)).iterrows()
         count = 0
+        comment_buf = []
+        video_buf = []
 
         for row in rows:
             count += 1
@@ -186,17 +202,7 @@ if __name__ == "__main__":
                     "content": row["content"],
                     "date_posted": row["date_posted"],
                 }
-
-                try:
-                    get_missing_video_data(video)
-                except KeyError:
-                    continue
-
-                if video["channel_id"] not in channels:
-                    channels[video["channel_id"]] = row["video_op"]
-
-                writer_videos.writerow(video)
-                print(count)
+                video_buf.append(video)
 
             else:
                 comment = {
@@ -205,30 +211,57 @@ if __name__ == "__main__":
                     "content": row["content"],
                     "date_posted": row["date_posted"],
                 }
-                
-                try:
-                    get_missing_comment_data(comment)
-                except KeyError:
-                    continue
+                comment_buf.append(comment)
 
-                if comment["op_channel_id"] not in channels:
-                    if int(row["reply"]):
-                        channels[comment["op_channel_id"]] = row["reply_op"]
-                    else:
-                        channels[comment["op_channel_id"]] = row["comment_op"]
-                writer_comments.writerow(comment)
+            if len(video_buf) == 100:
+                video_buf = get_missing_video_data(video_buf)
+                for video in video_buf:
+                    if video["channel_id"] not in channels:
+                        channels[video["channel_id"]] = None
+                    writer_videos.writerow(video)
                 print(count)
+                video_buf = {}
+
+            elif len(comment_buf) == 100:
+                comment_buf = get_missing_comment_data(comment_buf)
+                for comment in comment_buf:
+                    if comment["op_channel_id"] not in channels:
+                        channels[comment["op_channel_id"]] = None
+                    writer_comments.writerow(comment)
+                print(count)
+                comment_buf = {}
+
+    # Write remainders in buffer
+    if len(video_buf) > 0:
+        video_buf = get_missing_video_data(video_buf)
+        for video in video_buf.values():
+            if video["channel_id"] not in channels:
+                channels[video["channel_id"]] = None
+            writer_videos.writerow(video)
+        print(count)
+
+    if len(comment_buf) > 0:
+        comment_buf = get_missing_comment_data(comment_buf)
+        for comment in comment_buf.values():
+            if comment["op_channel_id"] not in channels:
+                channels[comment["op_channel_id"]] = None
+            writer_comments.writerow(comment)
+        print(count)
 
     file_comments.close()
     file_videos.close()
     print("Successfully created videos.csv and comments.csv files.")
 
+    with open(os.path.join(path_new, "channel_ids.txt"), "w") as f:
+        for channel_id in channels.keys():
+            f.write(channel_id + "\n")
+
     # file_channels = open(os.path.join(path_new, "channels.csv"), "w", newline="")
     # writer_channels = DictWriter(file_comments, CHANNEL_KEYS)
     # writer_channels.writeheader()
 
-    # for channel_id, username in channels.items():
-    #     channel = {"id": channel_id, "username": username}
+    # for channel_id in channels.keys():
+    #     channel = {"id": channel_id}
     #     get_missing_channel_data(channel)
     #     writer_channels.writerow(channel)
 

@@ -103,7 +103,7 @@ def get_missing_video_data(videos):
     response = requests.get(
         "https://www.googleapis.com/youtube/v3/videos",
         params=dict(
-            id=",".join([v["id"] for v in videos]),
+            id="|".join([v["id"] for v in videos]),
             part="snippet,statistics",
             key=API_KEY,
             textFormat="plainText",
@@ -220,7 +220,7 @@ if __name__ == "__main__":
                         channels[video["channel_id"]] = None
                     writer_videos.writerow(video)
                 print(count)
-                video_buf = {}
+                video_buf = []
 
             elif len(comment_buf) == 100:
                 comment_buf = get_missing_comment_data(comment_buf)
@@ -229,7 +229,7 @@ if __name__ == "__main__":
                         channels[comment["op_channel_id"]] = None
                     writer_comments.writerow(comment)
                 print(count)
-                comment_buf = {}
+                comment_buf = []
 
     # Write remainders in buffer
     if len(video_buf) > 0:

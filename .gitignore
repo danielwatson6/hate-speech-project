@@ -2,7 +2,8 @@
 data/
 env/
 model_files/
-scraping/api_key
+scraping/twitter_api.json
+scraping/youtube_api_key
 
 # Python
 *.py[cod]

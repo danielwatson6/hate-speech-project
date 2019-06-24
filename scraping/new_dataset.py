@@ -58,7 +58,7 @@ def get_missing_comment_data(comments):
     response = requests.get(
         "https://www.googleapis.com/youtube/v3/comments",
         params=dict(
-            id=",".join([c["id"] for c in comments]),
+            id="|".join([c["id"] for c in comments]),
             part="snippet",
             key=API_KEY,
             textFormat="plainText",
@@ -163,7 +163,7 @@ def print_row(row, keys):
 
 
 if __name__ == "__main__":
-    with open(os.path.join("scraping", "api_key")) as f:
+    with open(os.path.join("scraping", "youtube_api_key")) as f:
         API_KEY = f.read().strip()
 
     path_orig = os.path.join(os.environ["DATASETS"], "youtube_right")

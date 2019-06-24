@@ -39,7 +39,11 @@ After running a script that produces visualizations (for example, `centroids.py`
 
 - [Google News Word2Vec](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing): place the file directly in the `data` directory.
 
-### Scraping YouTube
+- [Twitter moral foundations dataset](https://psyarxiv.com/w4f72/): rename the directory to `twitter_mf` and place it in the `data` directory.
 
-For the scraping script to work, place your YouTube API key in a file `scraping/api_key`.
+### Scraping
 
+For the scraping scripts to work, you need your own API keys.
+
+- Place your YouTube API key in a file `scraping/api_key`.
+- Place your Twitter API keys in a JSON file `scraping/twitter_api.json` with the following keys: `consumer_key`, `consumer_secret`, `access_token_key`, `access_token_secret`.

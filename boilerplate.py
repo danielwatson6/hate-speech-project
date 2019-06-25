@@ -1,5 +1,6 @@
 from collections import namedtuple
-import os.path
+import json
+import os
 import sys
 
 import tensorflow as tf
@@ -26,10 +27,19 @@ class Model(tf.keras.Model):
         super().__init__()
         self._save_dir = save_dir
         self._training = training
-        # TODO: restore hyperparameters if they were saved.
         self.hparams = {**Model.default_hparams, **hparams}
         self._optimizer = self.get_optimizer()
         self._ckpt = None
+
+        hparams_path = os.path.join(self.save_dir, "hparams.json")
+        if os.path.isfile(hparams_path):
+            with open(hparams_path) as f:
+                self.hparams = json.load(f)
+        else:
+            if not os.path.exists(self.save_dir):
+                os.makedirs(self.save_dir)
+            with open(hparams_path, "w") as f:
+                json.dump(self.hparams._asdict(), f, indent=4, sort_keys=True)
 
     @property
     def save_dir(self):

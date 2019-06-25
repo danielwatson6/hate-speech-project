@@ -15,7 +15,7 @@ pip install -r requirements.txt
 
 ### YouTube data environment variable
 
-Ping @danielwatson6 for access to the YouTube corpus. Set up an environment variable `DATASETS=/path/to/youtube/data/dir` and name the directory with the CSV files `youtube_right`.
+Ping @danielwatson6 for access to the YouTube corpus. Set up an environment variable `DATASETS=/path/to/youtube/data/dir` and name the directory with the CSV files `youtube_right`. This is done unlike with the rest of the data to avoid the massive dataset not fitting on available SSD space.
 
 ### Python
 
@@ -29,7 +29,7 @@ python -m scraping.new_dataset  # instead of `python scraping/new_dataset.py` or
 
 ### Embedding visualization
 
-After running a script that produces visualizations (for example, `centroids.py`), go to [projector.tensorflow.org](http://projector.tensorflow.org) and upload the TSV files inside the `projector` directory.
+After running a script that produces visualizations (for example, `scripts.centroids`), go to [projector.tensorflow.org](http://projector.tensorflow.org) and upload the TSV files inside the `projector` directory.
 
 ## Datasets
 

@@ -39,7 +39,7 @@ After running a script that produces visualizations (for example, `scripts.centr
 
 - [Google News Word2Vec](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing): place the file directly in the `data` directory.
 
-- [Twitter moral foundations dataset](https://psyarxiv.com/w4f72/): rename the directory to `twitter_mf` and place it in the `data` directory.
+- [Twitter moral foundations dataset](https://psyarxiv.com/w4f72/): rename the directory to `twitter_mf` and place it in the `data` directory. To scrape the tweets from their id's, run `python -m scraping.twitter_mf` and then to clean the data run `python -m scripts.clean_twitter_mf`.
 
 ### Scraping
 

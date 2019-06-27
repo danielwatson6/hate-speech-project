@@ -27,8 +27,7 @@ class Model(tf.keras.Model):
         super().__init__()
         self._save_dir = save_dir
         self._training = training
-        self.hparams = {**Model.default_hparams, **hparams}
-        self._optimizer = self.get_optimizer()
+        self.hparams = {**self.default_hparams, **hparams}
         self._ckpt = None
 
         hparams_path = os.path.join(self.save_dir, "hparams.json")
@@ -57,9 +56,6 @@ class Model(tf.keras.Model):
     def hparams(self, value):
         self._hparams = Hyperparameters(value)
 
-    def get_optimizer(self):
-        raise NotImplementedError
-
     def save(self):
         if self._ckpt is None:
             self._ckpt = tf.train.Checkpoint(model=self)
@@ -79,7 +75,7 @@ class DataLoader:
 
     def __init__(self, training=True, **hparams):
         self._training = training
-        self.hparams = {**DataLoader.default_hparams, **hparams}
+        self.hparams = {**self.default_hparams, **hparams}
         self._data = self.load()
 
     @property

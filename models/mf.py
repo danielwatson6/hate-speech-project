@@ -79,9 +79,10 @@ class MF(tfbp.Model):
     def train(self, dataset):
         # Loss function.
         if self.hparams.loss == "huber":
-            loss_fn = tf.losses.Huber()
+            _loss_fn = tf.losses.Huber()
         else:
-            loss_fn = tf.losses.KLDivergence()
+            _loss_fn = tf.losses.KLDivergence()
+        loss_fn = lambda yt, yp: tf.reduce_mean(_loss_fn(yt, yp))
 
         # Optimizer.
         if self.hparams.optimizer == "adam":
@@ -93,6 +94,14 @@ class MF(tfbp.Model):
         n = self.hparams.num_valid // self.hparams.batch_size
         train_dataset = dataset.skip(n)
         valid_dataset = repeat(dataset.take(n))
+
+        # TensorBoard writers.
+        train_writer = tf.summary.create_file_writer(
+            os.path.join(self.save_dir, "train")
+        )
+        valid_writer = tf.summary.create_file_writer(
+            os.path.join(self.save_dir, "valid")
+        )
 
         while self.epoch.numpy() < self.hparams.epochs:
             for i, (x, y) in enumerate(train_dataset):
@@ -111,6 +120,10 @@ class MF(tfbp.Model):
                             step, train_loss, valid_loss
                         )
                     )
+                    with train_writer.as_default():
+                        tf.summary.scalar("loss", train_loss, step=step)
+                    with valid_writer.as_default():
+                        tf.summary.scalar("loss", valid_loss, step=step)
                 else:
                     print("Step {} (train_loss={:.4f})".format(step, train_loss))
 

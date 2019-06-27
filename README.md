@@ -31,6 +31,10 @@ python -m scraping.new_dataset  # instead of `python scraping/new_dataset.py` or
 
 After running a script that produces visualizations (for example, `scripts.centroids`), go to [projector.tensorflow.org](http://projector.tensorflow.org) and upload the TSV files inside the `projector` directory.
 
+### Model visualization
+
+During and after training, the training and validation losses are plotted in TensorBoard. To visualize, run `tensorboard --logdir=model_files` and open [localhost:6006](localhost:6006) in the browser.
+
 ## Datasets
 
 - [Stormfront dataset](https://github.com/aitor-garcia-p/hate-speech-dataset): place the `all_files` directory and the `annotations_metadata.csv` file inside this repository's `data` directory. Rename `all_files` to `stormfront`, and `annotations_metadata.csv` to `stormfront.csv`.

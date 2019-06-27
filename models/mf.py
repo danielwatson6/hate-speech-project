@@ -2,12 +2,12 @@
 
 import os.path
 
-from gensim.models import KeyedVectors
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras.layers as tfkl
 
 import boilerplate as tfbp
+import utils
 
 
 def repeat(dataset):
@@ -39,7 +39,7 @@ class MF(tfbp.Model):
 
         embeds_path = os.path.join("data", "twitter_mf.clean.npy")
         if not os.path.isfile(embeds_path):
-            word2vec = KeyedVectors.load(os.path.join("data", "word2vec"), mmap="r")
+            word2vec = utils.load_word2vec()
             embedding_matrix = np.random.uniform(
                 low=-1.0, high=1.0, size=(self.hparams.vocab_size, 300)
             )
@@ -51,6 +51,7 @@ class MF(tfbp.Model):
                     if word in word2vec:
                         embedding_matrix[i] = word2vec[word]
             np.save(embeds_path, embedding_matrix)
+            del word2vec
 
         else:
             embedding_matrix = np.load(embeds_path)

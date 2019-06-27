@@ -104,7 +104,7 @@ class MF(tfbp.Model):
         )
 
         while self.epoch.numpy() < self.hparams.epochs:
-            for i, (x, y) in enumerate(train_dataset):
+            for x, y in train_dataset:
 
                 with tf.GradientTape() as tape:
                     train_loss = loss_fn(y, self(x))
@@ -129,5 +129,6 @@ class MF(tfbp.Model):
 
                 self.step.assign_add(1)
 
+            print(f"Epoch {self.epoch.numpy()} finished")
             self.epoch.assign_add(1)
             self.save()

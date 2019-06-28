@@ -149,6 +149,6 @@ class MF(tfbp.Model):
                 scores_pred.append(klp)
                 scores_dumb.append(kld)
 
-        print("Model KL\t", sum(scores_pred) / len(scores_pred))
-        print("Baseline KL\t", sum(scores_dumb) / len(scores_dumb))
-        print("Gold KL\t", 0.0)
+        print("KL[p||u]\t", tf.reduce_mean(scores_dumb).numpy())
+        print("KL[p||q]\t", tf.reduce_mean(scores_pred).numpy())
+        print("KL[p||p]\t", 0.0)

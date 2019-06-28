@@ -55,7 +55,11 @@ class MF(tfbp.DataLoader):
         self._word_to_id = tf.lookup.StaticHashTable(table_initializer, 1)
 
         dataset = tf.data.experimental.make_csv_dataset(
-            data_path, self.hparams.batch_size
+            data_path,
+            self.hparams.batch_size,
+            num_epochs=1,
+            shuffle=False,
+            num_rows_for_inference=None,
         )
         dataset = dataset.map(self.dict_to_pair)
         return dataset.prefetch(1)

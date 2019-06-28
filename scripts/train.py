@@ -20,8 +20,8 @@ if __name__ == "__main__":
     DataLoader = getattr(__import__("data_loaders." + sys.argv[3]), sys.argv[3])
 
     parser = ArgumentParser()
-    parser.add_argument("model", type=str)
     parser.add_argument("save_dir", type=str)
+    parser.add_argument("model", type=str)
     parser.add_argument("data_loader", type=str)
 
     args = {}

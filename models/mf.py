@@ -134,13 +134,10 @@ class MF(tfbp.Model):
             print(f"Epoch {self.epoch.numpy()} finished")
             self.epoch.assign_add(1)
             self.save()
-            self.evaluate_valid(valid_dataset)
+            self.evaluate(valid_dataset)
 
     def evaluate(self, dataset):
         valid_dataset = dataset.take(self.hparams.num_valid // self.hparams.batch_size)
-        evaluate_valid(valid_dataset)
-
-    def evaluate_valid(self, valid_dataset):
         cos_sim = tf.losses.CosineSimilarity(reduction=tf.losses.Reduction.NONE)
         all_scores_pred = []
         all_scores_dumb = []

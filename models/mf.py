@@ -126,6 +126,12 @@ class MF(tfbp.Model):
                         ),
                         flush=True,
                     )
+
+                    if self.hparams.loss == "cos":
+                        # Invert them again to get normal plots.
+                        train_loss = -train_loss
+                        valid_loss = -valid_loss
+
                     with train_writer.as_default():
                         tf.summary.scalar(self.hparams.loss, train_loss, step=step)
                     with valid_writer.as_default():
@@ -138,7 +144,9 @@ class MF(tfbp.Model):
             print(f"Epoch {self.epoch.numpy()} finished")
             self.epoch.assign_add(1)
             self.save()
-            self.evaluate(dataset)
+            eval_score = self.evaluate(dataset)
+            with valid_writer.as_default():
+                tf.summary.scalar("total_cos", eval_score, step=step)
 
     def evaluate(self, dataset):
         valid_dataset = dataset.take(self.hparams.num_valid // self.hparams.batch_size)
@@ -152,6 +160,9 @@ class MF(tfbp.Model):
                 all_scores_pred.append(p)
                 all_scores_dumb.append(d)
 
-        print("baseline\t", tf.reduce_mean(all_scores_dumb).numpy())
-        print("model\t", tf.reduce_mean(all_scores_pred).numpy())
+        baseline_score = tf.reduce_mean(all_scores_dumb).numpy()
+        model_score = tf.reduce_mean(all_scores_pred).numpy()
+        print("baseline\t", baseline_score)
+        print("model\t", model_score)
         print("perfect\t1.0", flush=True)
+        return model_score

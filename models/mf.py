@@ -1,6 +1,6 @@
 """Moral foundations classifier."""
 
-import os.path
+import os
 
 import numpy as np
 import tensorflow as tf
@@ -119,7 +119,8 @@ class MF(tfbp.Model):
                     print(
                         "Step {} (train_loss={:.4f} valid_loss={:.4f})".format(
                             step, train_loss, valid_loss
-                        )
+                        ),
+                        flush=True,
                     )
                     with train_writer.as_default():
                         tf.summary.scalar(self.hparams.loss, train_loss, step=step)
@@ -133,12 +134,14 @@ class MF(tfbp.Model):
             print(f"Epoch {self.epoch.numpy()} finished")
             self.epoch.assign_add(1)
             self.save()
+            self.evaluate_valid(valid_dataset)
 
     def evaluate(self, dataset):
         valid_dataset = dataset.take(self.hparams.num_valid // self.hparams.batch_size)
+        evaluate_valid(valid_dataset)
 
+    def evaluate_valid(self, valid_dataset):
         cos_sim = tf.losses.CosineSimilarity(reduction=tf.losses.Reduction.NONE)
-
         all_scores_pred = []
         all_scores_dumb = []
         for x, y in valid_dataset:
@@ -150,4 +153,4 @@ class MF(tfbp.Model):
 
         print("baseline\t", tf.reduce_mean(all_scores_dumb).numpy())
         print("model\t", tf.reduce_mean(all_scores_pred).numpy())
-        print("perfect\t", 1.0)
+        print("perfect\t1.0", flush=True)

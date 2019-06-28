@@ -24,11 +24,11 @@ class MF(tfbp.Model):
         "vocab_size": 20000,
         "hidden_size": 512,
         "fine_tune_embeds": False,
-        "loss": "kld",  # "kld" or "huber"
+        "loss": "huber",  # "huber" or "cos"
         "optimizer": "sgd",  # "sgd" or "adam"
         "learning_rate": 0.1,
         "num_valid": 4771,  # 24771 training examples
-        "epochs": 1,
+        "epochs": 5,
     }
 
     def __init__(self, *args, **kwargs):
@@ -71,7 +71,7 @@ class MF(tfbp.Model):
                 )
             )
         self.encoder.add(tfkl.Lambda(lambda x: tf.reduce_max(x, axis=1)))
-        self.encoder.add(tfkl.Dense(6, activation=tf.nn.softmax))
+        self.encoder.add(tfkl.Dense(6, activation=tf.nn.tanh))
 
     def call(self, x):
         embeds = self.embed(x)
@@ -82,7 +82,7 @@ class MF(tfbp.Model):
         if self.hparams.loss == "huber":
             _loss_fn = tf.losses.Huber()
         else:
-            _loss_fn = tf.losses.KLDivergence()
+            _loss_fn = tf.losses.CosineSimilarity()
         loss_fn = lambda yt, yp: tf.reduce_mean(_loss_fn(yt, yp))
 
         # Optimizer.
@@ -137,18 +137,17 @@ class MF(tfbp.Model):
     def evaluate(self, dataset):
         valid_dataset = dataset.take(self.hparams.num_valid // self.hparams.batch_size)
 
-        KL = tf.losses.KLDivergence(reduction=None)
+        cos_sim = tf.losses.CosineSimilarity(reduction=tf.losses.Reduction.NONE)
 
-        y_dumb = [1 / 6] * 6
-        scores_pred = []
-        scores_dumb = []
+        all_scores_pred = []
+        all_scores_dumb = []
         for x, y in valid_dataset:
-            kl_pred = KL(y, self(x))
-            kl_dumb = KL(y, [y_dumb] * x.shape[0])
-            for klp, kld in zip(kl_pred, kl_dumb):
-                scores_pred.append(klp)
-                scores_dumb.append(kld)
+            scores_pred = cos_sim(y, self(x))
+            scores_dumb = cos_sim(y, tf.random.normal(y.shape))
+            for p, d in zip(scores_pred, scores_dumb):
+                scores_pred.append(p)
+                scores_dumb.append(d)
 
-        print("KL[p||u]\t", tf.reduce_mean(scores_dumb).numpy())
-        print("KL[p||q]\t", tf.reduce_mean(scores_pred).numpy())
-        print("KL[p||p]\t", 0.0)
+        print("baseline\t", tf.reduce_mean(all_scores_dumb).numpy())
+        print("model\t", tf.reduce_mean(all_scores_pred).numpy())
+        print("perfect\t", 1.0)

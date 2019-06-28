@@ -114,23 +114,19 @@ class MF(tfbp.Model):
                 grads = tape.gradient(train_loss, self.trainable_weights)
                 opt.apply_gradients(zip(grads, self.trainable_weights))
 
+                if self.hparams.loss == "cos":
+                    train_loss = -train_loss
+
                 step = self.step.numpy()
                 if step % 100 == 0:
                     x, y = next(valid_dataset)
                     valid_loss = loss_fn(y, self(x))
-                    if self.hparams.loss == "cos":
-                        valid_loss = -valid_loss
                     print(
                         "Step {} (train_loss={:.4f} valid_loss={:.4f})".format(
                             step, train_loss, valid_loss
                         ),
                         flush=True,
                     )
-
-                    if self.hparams.loss == "cos":
-                        # Invert them again to get normal plots.
-                        train_loss = -train_loss
-                        valid_loss = -valid_loss
 
                     with train_writer.as_default():
                         tf.summary.scalar(self.hparams.loss, train_loss, step=step)

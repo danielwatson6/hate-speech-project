@@ -15,7 +15,7 @@ class MF(tfbp.DataLoader):
 
     def load(self):
         vocab_path = os.path.join("data", "twitter_mf.clean.vocab")
-        data_path = os.path.join("data", "twitter_mf.clean.csv")
+        data_path = os.path.join("data", "twitter_mf.clean.shuffled.csv")
 
         if not os.path.isfile(vocab_path):
             counter = Counter()

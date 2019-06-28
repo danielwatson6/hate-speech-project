@@ -109,6 +109,8 @@ class MF(tfbp.Model):
 
                 with tf.GradientTape() as tape:
                     train_loss = loss_fn(y, self(x))
+                    if self.hparams.loss == "cos":
+                        train_loss = -train_loss
                 grads = tape.gradient(train_loss, self.trainable_weights)
                 opt.apply_gradients(zip(grads, self.trainable_weights))
 
@@ -116,6 +118,8 @@ class MF(tfbp.Model):
                 if step % 100 == 0:
                     x, y = next(valid_dataset)
                     valid_loss = loss_fn(y, self(x))
+                    if self.hparams.loss == "cos":
+                        valid_loss = -valid_loss
                     print(
                         "Step {} (train_loss={:.4f} valid_loss={:.4f})".format(
                             step, train_loss, valid_loss
@@ -134,7 +138,7 @@ class MF(tfbp.Model):
             print(f"Epoch {self.epoch.numpy()} finished")
             self.epoch.assign_add(1)
             self.save()
-            self.evaluate(valid_dataset)
+            self.evaluate(dataset)
 
     def evaluate(self, dataset):
         valid_dataset = dataset.take(self.hparams.num_valid // self.hparams.batch_size)

@@ -93,8 +93,8 @@ class MF(tfbp.Model):
 
         # Train/validation split.
         n = self.hparams.num_valid // self.hparams.batch_size
-        train_dataset = dataset.skip(n)
-        valid_dataset = repeat(dataset.take(n))
+        train_dataset = dataset.skip(n).shuffle(10000)
+        valid_dataset = repeat(dataset.take(n).shuffle(10000))
 
         # TensorBoard writers.
         train_writer = tf.summary.create_file_writer(
@@ -133,3 +133,22 @@ class MF(tfbp.Model):
             print(f"Epoch {self.epoch.numpy()} finished")
             self.epoch.assign_add(1)
             self.save()
+
+    def evaluate(self, dataset):
+        valid_dataset = dataset.take(self.hparams.num_valid // self.hparams.batch_size)
+
+        KL = tf.losses.KLDivergence(reduction=None)
+
+        y_dumb = [1 / 6] * 6
+        scores_pred = []
+        scores_dumb = []
+        for x, y in valid_dataset:
+            kl_pred = KL(y, self(x))
+            kl_dumb = KL(y, [y_dumb] * x.shape[0])
+            for klp, kld in zip(kl_pred, kl_dumb):
+                scores_pred.append(klp)
+                scores_dumb.append(kld)
+
+        print("Model KL\t", sum(scores_pred) / len(scores_pred))
+        print("Baseline KL\t", sum(scores_dumb) / len(scores_dumb))
+        print("Gold KL\t", 0.0)

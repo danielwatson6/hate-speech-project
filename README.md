@@ -9,17 +9,20 @@ This repository requires python 3.7.3, pip and virtualenv. Setup a virtual envir
 virtualenv env
 source env/bin/activate
 pip install -r requirements.txt
+pip install tensorflow==2.0.0b0  # or `pip install tensorflow-gpu==2.0.0b0`
 ```
 
 ## Workflow
 
-### YouTube data environment variable
+### Non-public data
 
-Ping @danielwatson6 for access to the YouTube corpus. Set up an environment variable `DATASETS=/path/to/youtube/data/dir` and name the directory with the CSV files `youtube_right`. This is done unlike with the rest of the data to avoid the massive dataset not fitting on available SSD space.
+Ping @danielwatson6 for access to the YouTube and the ambiguity corpora.
+- Set up an environment variable `DATASETS=/path/to/youtube/data/dir` and name the directory with the YouTube CSV files `youtube_right`. This is done unlike with the rest of the data to avoid the massive dataset not fitting on available SSD space.
+- Rename the ambiguity data to `ambiguity.csv` and place it in the `data` folder.
 
 ### Python
 
-Whenever working with python, run `source env/bin/activate` in the current terminal session. If new packages are installed, update the list of dependencies by running `pip freeze > requirements.txt`.
+Whenever working with python, run `source env/bin/activate` in the current terminal session. If new packages are installed, update the list of dependencies by running `pip freeze > requirements.txt`. Make sure to not add `tensorflow` to the list.
 
 Scripts in subdirectories (e.g. those in `scraping`) should be run as modules to avoid path and module conflicts:
 

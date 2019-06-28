@@ -24,7 +24,7 @@ class MF(tfbp.Model):
         "vocab_size": 20000,
         "hidden_size": 512,
         "fine_tune_embeds": False,
-        "loss": "huber",  # "huber" or "cos"
+        "loss": "cos",  # "huber" or "cos"
         "optimizer": "sgd",  # "sgd" or "adam"
         "learning_rate": 0.1,
         "num_valid": 4771,  # 24771 training examples
@@ -122,9 +122,9 @@ class MF(tfbp.Model):
                         )
                     )
                     with train_writer.as_default():
-                        tf.summary.scalar("loss", train_loss, step=step)
+                        tf.summary.scalar(self.hparams.loss, train_loss, step=step)
                     with valid_writer.as_default():
-                        tf.summary.scalar("loss", valid_loss, step=step)
+                        tf.summary.scalar(self.hparams.loss, valid_loss, step=step)
                 else:
                     print("Step {} (train_loss={:.4f})".format(step, train_loss))
 
@@ -145,8 +145,8 @@ class MF(tfbp.Model):
             scores_pred = cos_sim(y, self(x))
             scores_dumb = cos_sim(y, tf.random.normal(y.shape))
             for p, d in zip(scores_pred, scores_dumb):
-                scores_pred.append(p)
-                scores_dumb.append(d)
+                all_scores_pred.append(p)
+                all_scores_dumb.append(d)
 
         print("baseline\t", tf.reduce_mean(all_scores_dumb).numpy())
         print("model\t", tf.reduce_mean(all_scores_pred).numpy())

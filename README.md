@@ -46,7 +46,12 @@ During and after training, the training and validation losses are plotted in Ten
 
 - [Google News Word2Vec](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing): place the file directly in the `data` directory.
 
-- [Twitter moral foundations dataset](https://psyarxiv.com/w4f72/): rename the directory to `twitter_mf` and place it in the `data` directory. To scrape the tweets from their id's, run `python -m scraping.twitter_mf` and then to clean the data run `python -m scripts.clean_twitter_mf`. To have a fixed heldout dataset that represents well the rest of the data, create a shuffled version of the data: `cat data/twitter_mf.clean.csv | shuf > data/twitter_mf.clean.shuffled.csv` (macOS users: `sort` by hash is a good substitute for `shuf`).
+- [Twitter moral foundations dataset](https://psyarxiv.com/w4f72/): rename the directory to `twitter_mf` and place it in the `data` directory. To scrape the tweets from their id's, run `python -m scraping.twitter_mf` and then to clean the data run `python -m scripts.clean_twitter_mf`. To have a fixed heldout dataset that represents well the rest of the data, create a shuffled version of the data:
+```bash
+cat data/twitter_mf.clean.csv | head -1 > data/twitter_mf.clean.shuffled.csv
+# macOS users: `sort` by hash is a good replacement for `shuf`.
+cat data/twitter_mf.clean.csv | tail -24771 | shuf >> data/twitter_mf.clean.shuffled.csv
+```
 
 ### Scraping
 

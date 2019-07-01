@@ -150,7 +150,7 @@ class MF(tfbp.Model):
     def evaluate(self, dataset):
         valid_dataset = dataset.take(self.hparams.num_valid // self.hparams.batch_size)
         cos_sim = tf.losses.CosineSimilarity(reduction=tf.losses.Reduction.NONE)
-        mse = tf.losses.MeanSquaredError(reduction=tf.losses.Reduction.NONE)
+        mse = lambda x, y: (x - y) ** 2
         all_cos_sim = []
         all_mse = []
         for x, y in valid_dataset:

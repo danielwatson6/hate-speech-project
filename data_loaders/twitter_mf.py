@@ -37,12 +37,6 @@ class MF(tfbp.DataLoader):
                 for word, _ in counter.most_common():
                     f.write(word + "\n")
 
-        # with open(vocab_path) as f:
-        #     self._word_to_id = {
-        #         word: i
-        #         for i, word in enumerate(f.readlines()[: self.hparams.vocab_size])
-        #     }
-
         # filename, key_dtype, key_index, value_dtype, value_index, vocab_size
         table_initializer = tf.lookup.TextFileInitializer(
             vocab_path,

@@ -19,16 +19,16 @@ def repeat(dataset):
 @tfbp.default_export
 class MF(tfbp.Model):
     default_hparams = {
-        "rnn_layers": 1,
+        "rnn_layers": 2,
         "batch_size": 32,
-        "vocab_size": 20000,
+        "vocab_size": 28373,  # all vocabulary
         "hidden_size": 512,
-        "fine_tune_embeds": False,
+        "fine_tune_embeds": True,
         "loss": "cos",  # "huber" or "cos"
         "optimizer": "sgd",  # "sgd" or "adam"
         "learning_rate": 0.1,
         "num_valid": 4771,  # 24771 training examples
-        "epochs": 5,
+        "epochs": 20,
     }
 
     def __init__(self, *args, **kwargs):
@@ -45,8 +45,6 @@ class MF(tfbp.Model):
             )
             with open(os.path.join("data", "twitter_mf.clean.vocab")) as f:
                 for i, word in enumerate(f):
-                    if i >= self.hparams.vocab_size:
-                        break
                     word = word.strip()
                     if word in word2vec:
                         embedding_matrix[i] = word2vec[word]
@@ -104,6 +102,8 @@ class MF(tfbp.Model):
             os.path.join(self.save_dir, "valid")
         )
 
+        max_eval_score = float("-inf")
+
         while self.epoch.numpy() < self.hparams.epochs:
             for x, y in train_dataset:
 
@@ -139,26 +139,33 @@ class MF(tfbp.Model):
 
             print(f"Epoch {self.epoch.numpy()} finished")
             self.epoch.assign_add(1)
-            self.save()
-            eval_score = self.evaluate(dataset)
+            cos_score, mse_scores = self.evaluate(dataset)
             with valid_writer.as_default():
-                tf.summary.scalar("total_cos", eval_score, step=step)
+                tf.summary.scalar("total_cos", cos_score, step=step)
+                tf.summary.histogram("mse", mse_scores, step=step)
+
+            if cos_score > max_eval_score:
+                self.save()
 
     def evaluate(self, dataset):
         valid_dataset = dataset.take(self.hparams.num_valid // self.hparams.batch_size)
         cos_sim = tf.losses.CosineSimilarity(reduction=tf.losses.Reduction.NONE)
-        all_scores_pred = []
-        all_scores_dumb = []
+        mse = tf.losses.MeanSquaredError(reduction=tf.losses.Reduction.NONE)
+        all_cos_sim = []
+        all_mse = []
         for x, y in valid_dataset:
-            scores_pred = cos_sim(y, self(x))
-            scores_dumb = cos_sim(y, tf.random.normal(y.shape))
-            for p, d in zip(scores_pred, scores_dumb):
-                all_scores_pred.append(p)
-                all_scores_dumb.append(d)
+            y_pred = self(x)
+            for a, b in zip(cos_sim(y, y_pred), mse(y, y_pred)):
+                all_cos_sim.append(a)
+                all_mse.append(b)
 
-        baseline_score = tf.reduce_mean(all_scores_dumb).numpy()
-        model_score = tf.reduce_mean(all_scores_pred).numpy()
-        print("baseline\t", baseline_score)
-        print("model\t", model_score)
-        print("perfect\t1.0", flush=True)
-        return model_score
+        cos_score = tf.reduce_mean(all_cos_sim).numpy()
+        mse_scores = tf.reduce_mean(all_mse, axis=0).numpy()
+        print("cos\t", cos_score)
+        print("authority\t", mse_scores[0])
+        print("fairness\t", mse_scores[1])
+        print("care\t", mse_scores[2])
+        print("loyalty\t", mse_scores[3])
+        print("purity\t", mse_scores[4])
+        print("non_moral\t", mse_scores[5], flush=True)
+        return cos_score, mse_scores

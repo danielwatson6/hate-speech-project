@@ -28,7 +28,7 @@ def clean_tweet(tweet):
     # Remove URLs, usernames and special characters
     tweet = re.sub(r"http\S+", " ", tweet)
     tweet = re.sub(r"@\S+", "@ ACCOUNT", tweet)
-    tweet = re.sub(r"[0-9]+(?:\S[0-9]+)*", " N ", tweet)
+    tweet = re.sub(r"[0-9]+(?:\S[0-9]+)*", " <num> ", tweet)
     tweet = re.sub(f"[^A-Za-z{string.punctuation}]", " ", tweet)
     return " ".join(word_tokenize(tweet))
 

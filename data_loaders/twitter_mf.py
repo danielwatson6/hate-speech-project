@@ -13,7 +13,7 @@ import boilerplate as tfbp
 class MF(tfbp.DataLoader):
     default_hparams = {"batch_size": 32, "vocab_size": 28373}
 
-    def load(self):
+    def call(self):
         vocab_path = os.path.join("data", "twitter_mf.clean.vocab")
         data_path = os.path.join("data", "twitter_mf.clean.shuffled.csv")
 
@@ -21,7 +21,9 @@ class MF(tfbp.DataLoader):
             counter = Counter()
 
             df = pd.read_csv(data_path)
-            for row in df.iterrows():
+            for i, row in enumerate(df.iterrows()):
+                if i < 4771:
+                    continue
                 tokens = str(row[1]["tweet"]).strip().split()
                 for token in tokens:
                     if token not in counter:
@@ -29,10 +31,10 @@ class MF(tfbp.DataLoader):
                     counter[token] += 1
 
             with open(vocab_path, "w") as f:
-                f.write("<PAD>\n")
-                f.write("<UNK>\n")
-                f.write("<SOS>\n")
-                f.write("<EOS>\n")
+                f.write("<pad>\n")
+                f.write("<unk>\n")
+                f.write("<sos>\n")
+                f.write("<eos>\n")
 
                 for word, _ in counter.most_common():
                     f.write(word + "\n")
@@ -55,12 +57,12 @@ class MF(tfbp.DataLoader):
             shuffle=False,
             num_rows_for_inference=None,
         )
-        dataset = dataset.map(self.dict_to_pair)
+        dataset = dataset.map(self._dict_to_pair)
         return dataset.prefetch(1)
 
-    def dict_to_pair(self, batch):
-        # tweets = tf.strings.unicode_decode(batch["tweet"], input_encoding="UTF-8")
-        tweets = tf.strings.split(batch["tweet"]).to_tensor(default_value="<PAD>")
+    def _dict_to_pair(self, batch):
+        tweets = batch["tweet"] + " <eos>"
+        tweets = tf.strings.split(tweets).to_tensor(default_value="<pad>")
         tweets = self._word_to_id.lookup(tweets)
 
         labels = [batch[k] for k in batch.keys() if k not in ["id", "tweet"]]

@@ -10,12 +10,6 @@ import boilerplate as tfbp
 import utils
 
 
-def repeat(dataset):
-    while True:
-        for el in dataset:
-            yield el
-
-
 @tfbp.default_export
 class MF(tfbp.Model):
     default_hparams = {
@@ -29,6 +23,7 @@ class MF(tfbp.Model):
         "learning_rate": 0.1,
         "num_valid": 4771,  # 24771 training examples
         "epochs": 20,
+        "dropout": 0.0,
     }
 
     def __init__(self, *args, **kwargs):
@@ -65,7 +60,11 @@ class MF(tfbp.Model):
         for _ in range(self.hparams.rnn_layers):
             self.encoder.add(
                 tfkl.Bidirectional(
-                    tfkl.GRU(self.hparams.hidden_size, return_sequences=True)
+                    tfkl.GRU(
+                        self.hparams.hidden_size,
+                        dropout=self.hparams.dropout,
+                        return_sequences=True,
+                    )
                 )
             )
         self.encoder.add(tfkl.Lambda(lambda x: tf.reduce_max(x, axis=1)))
@@ -75,7 +74,7 @@ class MF(tfbp.Model):
         embeds = self.embed(x)
         return self.encoder(embeds)
 
-    def train(self, dataset):
+    def fit(self, data_loader):
         # Loss function.
         if self.hparams.loss == "huber":
             _loss_fn = tf.losses.Huber()
@@ -90,9 +89,10 @@ class MF(tfbp.Model):
             opt = tf.optimizers.SGD(self.hparams.learning_rate)
 
         # Train/validation split.
+        dataset = data_loader()
         n = self.hparams.num_valid // self.hparams.batch_size
         train_dataset = dataset.skip(n).shuffle(10000)
-        valid_dataset = repeat(dataset.take(n).shuffle(10000))
+        valid_dataset = iter(dataset.take(n).shuffle(10000).repeat())
 
         # TensorBoard writers.
         train_writer = tf.summary.create_file_writer(
@@ -139,7 +139,7 @@ class MF(tfbp.Model):
 
             print(f"Epoch {self.epoch.numpy()} finished")
             self.epoch.assign_add(1)
-            cos_score, mse_scores = self.evaluate(dataset)
+            cos_score, mse_scores = self._evaluate(dataset)
             with valid_writer.as_default():
                 tf.summary.scalar("total_cos", cos_score, step=step)
                 tf.summary.histogram("mse", mse_scores, step=step)
@@ -147,7 +147,7 @@ class MF(tfbp.Model):
             if cos_score > max_eval_score:
                 self.save()
 
-    def evaluate(self, dataset):
+    def _evaluate(self, dataset):
         valid_dataset = dataset.take(self.hparams.num_valid // self.hparams.batch_size)
         cos_sim = tf.losses.CosineSimilarity(reduction=tf.losses.Reduction.NONE)
         mse = lambda x, y: (x - y) ** 2
@@ -169,3 +169,7 @@ class MF(tfbp.Model):
         print("purity\t", mse_scores[4])
         print("non_moral\t", mse_scores[5], flush=True)
         return cos_score, mse_scores
+
+    def evaluate(self, data_loader):
+        dataset = data_loader()
+        self._evaluate(dataset)

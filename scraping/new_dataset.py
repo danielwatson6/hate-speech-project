@@ -173,10 +173,10 @@ if __name__ == "__main__":
         os.makedirs(path_new)
 
     # Line-buffered.
-    file_comments = open(os.path.join(path_new, "comments.csv"), "w", 1)
+    file_comments = open(os.path.join(path_new, "comments.csv"), "w")
     writer_comments = DictWriter(file_comments, COMMENT_KEYS)
     writer_comments.writeheader()
-    file_videos = open(os.path.join(path_new, "videos.csv"), "w", 1)
+    file_videos = open(os.path.join(path_new, "videos.csv"), "w")
     writer_videos = DictWriter(file_comments, VIDEO_KEYS)
     writer_videos.writeheader()
 
@@ -220,9 +220,8 @@ if __name__ == "__main__":
                     if video["channel_id"] not in channels:
                         channels[video["channel_id"]] = None
                     writer_videos.writerow(video)
-                    file_videos.flush()
-                    os.fsync(file_videos)
-                print(count)
+                file_videos.flush()
+                os.fsync(file_videos.fileno())
                 video_buf = []
 
             elif len(comment_buf) == 100:
@@ -231,9 +230,8 @@ if __name__ == "__main__":
                     if comment["op_channel_id"] not in channels:
                         channels[comment["op_channel_id"]] = None
                     writer_comments.writerow(comment)
-                    file_comments.flush()
-                    os.fsync(file_comments)
-                print(count)
+                file_comments.flush()
+                os.fsync(file_comments.fileno())
                 comment_buf = []
 
     # Write remainders in buffer.
@@ -243,9 +241,8 @@ if __name__ == "__main__":
             if video["channel_id"] not in channels:
                 channels[video["channel_id"]] = None
             writer_videos.writerow(video)
-            file_videos.flush()
-            os.fsync(file_videos)
-        print(count)
+        file_videos.flush()
+        os.fsync(file_videos.fileno())
 
     if len(comment_buf) > 0:
         comment_buf = get_missing_comment_data(comment_buf)
@@ -253,9 +250,8 @@ if __name__ == "__main__":
             if comment["op_channel_id"] not in channels:
                 channels[comment["op_channel_id"]] = None
             writer_comments.writerow(comment)
-            file_comments.flush()
-            os.fsync(file_comments)
-        print(count)
+        file_comments.flush()
+        os.fsync(file_comments.fileno())
 
     file_comments.close()
     file_videos.close()
@@ -265,7 +261,7 @@ if __name__ == "__main__":
         for channel_id in channels.keys():
             f.write(channel_id + "\n")
             f.flush()
-            os.fsync(f)
+            os.fsync(f.fileno())
 
     # file_channels = open(os.path.join(path_new, "channels.csv"), "w", newline="")
     # writer_channels = DictWriter(file_comments, CHANNEL_KEYS)

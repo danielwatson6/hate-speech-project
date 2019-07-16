@@ -18,7 +18,7 @@ def _seq_to_str(seq, id_to_word):
 
 
 @tfbp.default_export
-class Seq2Seq(tfbp.Model):
+class LanguageModel(tfbp.Model):
     default_hparams = {
         "rnn_layers": 2,
         "batch_size": 32,
@@ -28,7 +28,7 @@ class Seq2Seq(tfbp.Model):
         "learning_rate": 0.001,
         "epochs": 5,
         "dropout": 0.0,
-        # "corpus": 2,  # 2 or 103
+        "corpus": 2,  # 2 or 103
     }
 
     def __init__(self, *args, **kwargs):

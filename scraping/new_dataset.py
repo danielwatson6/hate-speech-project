@@ -1,6 +1,7 @@
 from csv import DictWriter
 from datetime import datetime
 import os
+import sys
 import time
 
 import pandas as pd
@@ -73,7 +74,7 @@ def get_missing_comment_data(comments):
         return get_missing_comment_data(comments)
 
     result = []
-    for c in comments:
+    for c, res_item in zip(comments, response["items"]):
         try:
             if "parent_id" in response["snippet"]:
                 c["parent_comment_id"] = response["snippet"]["parent_id"]
@@ -118,12 +119,12 @@ def get_missing_video_data(videos):
         return get_missing_video_data(videos)
 
     result = []
-    for v in videos:
+    for v, res_item in zip(videos, response["items"]):
         try:
-            v["channel_id"] = response["snippet"]["channelId"]
-            v["like_count"] = response["statistics"]["likeCount"]
-            v["dislike_count"] = response["statistics"]["dislikeCount"]
-            v["view_count"] = response["statistics"]["viewCount"]
+            v["channel_id"] = res_item["snippet"]["channelId"]
+            v["like_count"] = res_item["statistics"]["likeCount"]
+            v["dislike_count"] = res_item["statistics"]["dislikeCount"]
+            v["view_count"] = res_item["statistics"]["viewCount"]
 
         except KeyError:
             continue
@@ -154,6 +155,7 @@ def get_missing_channel_data(channel):
 
 
 def writerow(row, keys, path):
+    print("    " + row["content"][:32])
     with open(path, mode="a", newline="") as f:
         writer = DictWriter(f, keys)
         # Write the header if the file is empty.
@@ -163,6 +165,11 @@ def writerow(row, keys, path):
 
 
 if __name__ == "__main__":
+
+    BUFSIZE = 20
+    if len(sys.argv) > 1:
+        BUFSIZE = int(sys.argv[1])
+
     with open(os.path.join("scraping", "youtube_api_key")) as f:
         API_KEY = f.read().strip()
 
@@ -179,6 +186,7 @@ if __name__ == "__main__":
     channels = {}
 
     for filename in os.listdir(path_orig):
+        print(filename)
         rows = pd.read_csv(os.path.join(path_orig, filename)).iterrows()
         count = 0
         comment_buf = []
@@ -209,16 +217,18 @@ if __name__ == "__main__":
                 }
                 comment_buf.append(comment)
 
-            if len(video_buf) == 100:
+            if len(video_buf) == BUFSIZE:
                 video_buf = get_missing_video_data(video_buf)
+                print(f"  retrieved {len(video_buf)} videos")
                 for video in video_buf:
                     if video["channel_id"] not in channels:
                         channels[video["channel_id"]] = None
                     writerow(video, VIDEO_KEYS, path_videos)
                 video_buf = []
 
-            elif len(comment_buf) == 100:
+            elif len(comment_buf) == BUFSIZE:
                 comment_buf = get_missing_comment_data(comment_buf)
+                print(f"  retrieved {len(comment_buf)} videos")
                 for comment in comment_buf:
                     if comment["op_channel_id"] not in channels:
                         channels[comment["op_channel_id"]] = None

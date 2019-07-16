@@ -153,7 +153,7 @@ def get_missing_channel_data(channel):
     channel["date_scraped"] = datetime.now().isoformat()
 
 
-def writerow(path, keys, row):
+def writerow(row, keys, path):
     with open(path, mode="a", newline="") as f:
         writer = DictWriter(f, keys)
         # Write the header if the file is empty.

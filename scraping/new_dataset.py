@@ -173,10 +173,10 @@ if __name__ == "__main__":
         os.makedirs(path_new)
 
     # Line-buffered.
-    file_comments = open(os.path.join(path_new, "comments.csv"), "w")
+    file_comments = open(os.path.join(path_new, "comments.csv"), "wb", 0)
     writer_comments = DictWriter(file_comments, COMMENT_KEYS)
     writer_comments.writeheader()
-    file_videos = open(os.path.join(path_new, "videos.csv"), "w")
+    file_videos = open(os.path.join(path_new, "videos.csv"), "wb", 0)
     writer_videos = DictWriter(file_comments, VIDEO_KEYS)
     writer_videos.writeheader()
 
@@ -260,8 +260,6 @@ if __name__ == "__main__":
     with open(os.path.join(path_new, "channel_ids.txt"), "w") as f:
         for channel_id in channels.keys():
             f.write(channel_id + "\n")
-            f.flush()
-            os.fsync(f.fileno())
 
     # file_channels = open(os.path.join(path_new, "channels.csv"), "w", newline="")
     # writer_channels = DictWriter(file_comments, CHANNEL_KEYS)

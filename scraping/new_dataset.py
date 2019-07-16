@@ -172,10 +172,11 @@ if __name__ == "__main__":
     if not os.path.exists(path_new):
         os.makedirs(path_new)
 
-    file_comments = open(os.path.join(path_new, "comments.csv"), "w", newline="")
+    # Line-buffered.
+    file_comments = open(os.path.join(path_new, "comments.csv", 1), "w", newline="")
     writer_comments = DictWriter(file_comments, COMMENT_KEYS)
     writer_comments.writeheader()
-    file_videos = open(os.path.join(path_new, "videos.csv"), "w", newline="")
+    file_videos = open(os.path.join(path_new, "videos.csv", 1), "w", newline="")
     writer_videos = DictWriter(file_comments, VIDEO_KEYS)
     writer_videos.writeheader()
 
@@ -219,6 +220,8 @@ if __name__ == "__main__":
                     if video["channel_id"] not in channels:
                         channels[video["channel_id"]] = None
                     writer_videos.writerow(video)
+                    writer_videos.flush()
+                    os.fsync(writer_videos)
                 print(count)
                 video_buf = []
 
@@ -228,24 +231,30 @@ if __name__ == "__main__":
                     if comment["op_channel_id"] not in channels:
                         channels[comment["op_channel_id"]] = None
                     writer_comments.writerow(comment)
+                    writer_comments.flush()
+                    os.fsync(writer_comments)
                 print(count)
                 comment_buf = []
 
-    # Write remainders in buffer
+    # Write remainders in buffer.
     if len(video_buf) > 0:
         video_buf = get_missing_video_data(video_buf)
-        for video in video_buf.values():
+        for video in video_buf:
             if video["channel_id"] not in channels:
                 channels[video["channel_id"]] = None
             writer_videos.writerow(video)
+            writer_videos.flush()
+            os.fsync(writer_videos)
         print(count)
 
     if len(comment_buf) > 0:
         comment_buf = get_missing_comment_data(comment_buf)
-        for comment in comment_buf.values():
+        for comment in comment_buf:
             if comment["op_channel_id"] not in channels:
                 channels[comment["op_channel_id"]] = None
             writer_comments.writerow(comment)
+            writer_comments.flush()
+            os.fsync(writer_comments)
         print(count)
 
     file_comments.close()

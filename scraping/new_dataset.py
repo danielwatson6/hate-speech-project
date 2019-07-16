@@ -153,13 +153,13 @@ def get_missing_channel_data(channel):
     channel["date_scraped"] = datetime.now().isoformat()
 
 
-def print_row(row, keys):
-    for key in keys:
-        text = str(row[key])
-        if len(text) > 12:
-            text = text[:12] + "..."
-        print(text + "\t", end="")
-    print()
+def writerow(path, keys, row):
+    with open(path, mode="a", newline="") as f:
+        writer = DictWriter(f, keys)
+        # Write the header if the file is empty.
+        if os.stat(path).st_size == 0:
+            writer.writeheader()
+        writer.writerow(row)
 
 
 if __name__ == "__main__":
@@ -172,17 +172,8 @@ if __name__ == "__main__":
     if not os.path.exists(path_new):
         os.makedirs(path_new)
 
-    # Line-buffered.
-    file_comments = open(
-        os.path.join(path_new, "comments.csv"), mode="w", buffering=1, newline=""
-    )
-    writer_comments = DictWriter(file_comments, COMMENT_KEYS)
-    writer_comments.writeheader()
-    file_videos = open(
-        os.path.join(path_new, "videos.csv"), mode="w", buffering=1, newline=""
-    )
-    writer_videos = DictWriter(file_comments, VIDEO_KEYS)
-    writer_videos.writeheader()
+    path_comments = os.path.join(path_new, "comments.csv")
+    path_videos = os.path.join(path_new, "videos.csv")
 
     # Keep a dict to query channel by ids without repetition.
     channels = {}
@@ -223,9 +214,7 @@ if __name__ == "__main__":
                 for video in video_buf:
                     if video["channel_id"] not in channels:
                         channels[video["channel_id"]] = None
-                    writer_videos.writerow(video)
-                file_videos.flush()
-                os.fsync(file_videos.fileno())
+                    writerow(video, VIDEO_KEYS, path_videos)
                 video_buf = []
 
             elif len(comment_buf) == 100:
@@ -233,9 +222,7 @@ if __name__ == "__main__":
                 for comment in comment_buf:
                     if comment["op_channel_id"] not in channels:
                         channels[comment["op_channel_id"]] = None
-                    writer_comments.writerow(comment)
-                file_comments.flush()
-                os.fsync(file_comments.fileno())
+                    writerow(comment, COMMENT_KEYS, path_comments)
                 comment_buf = []
 
     # Write remainders in buffer.
@@ -244,21 +231,15 @@ if __name__ == "__main__":
         for video in video_buf:
             if video["channel_id"] not in channels:
                 channels[video["channel_id"]] = None
-            writer_videos.writerow(video)
-        file_videos.flush()
-        os.fsync(file_videos.fileno())
+            writerow(video, VIDEO_KEYS, path_videos)
 
     if len(comment_buf) > 0:
         comment_buf = get_missing_comment_data(comment_buf)
         for comment in comment_buf:
             if comment["op_channel_id"] not in channels:
                 channels[comment["op_channel_id"]] = None
-            writer_comments.writerow(comment)
-        file_comments.flush()
-        os.fsync(file_comments.fileno())
+            writerow(comment, COMMENT_KEYS, path_comments)
 
-    file_comments.close()
-    file_videos.close()
     print("Successfully created videos.csv and comments.csv files.")
 
     with open(os.path.join(path_new, "channel_ids.txt"), "w") as f:

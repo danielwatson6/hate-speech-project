@@ -173,10 +173,14 @@ if __name__ == "__main__":
         os.makedirs(path_new)
 
     # Line-buffered.
-    file_comments = open(os.path.join(path_new, "comments.csv"), "wb", 0)
+    file_comments = open(
+        os.path.join(path_new, "comments.csv"), mode="w", buffering=1, newline=""
+    )
     writer_comments = DictWriter(file_comments, COMMENT_KEYS)
     writer_comments.writeheader()
-    file_videos = open(os.path.join(path_new, "videos.csv"), "wb", 0)
+    file_videos = open(
+        os.path.join(path_new, "videos.csv"), mode="w", buffering=1, newline=""
+    )
     writer_videos = DictWriter(file_comments, VIDEO_KEYS)
     writer_videos.writeheader()
 

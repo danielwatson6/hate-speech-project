@@ -220,8 +220,8 @@ if __name__ == "__main__":
                     if video["channel_id"] not in channels:
                         channels[video["channel_id"]] = None
                     writer_videos.writerow(video)
-                    writer_videos.flush()
-                    os.fsync(writer_videos)
+                    file_videos.flush()
+                    os.fsync(file_videos)
                 print(count)
                 video_buf = []
 
@@ -231,8 +231,8 @@ if __name__ == "__main__":
                     if comment["op_channel_id"] not in channels:
                         channels[comment["op_channel_id"]] = None
                     writer_comments.writerow(comment)
-                    writer_comments.flush()
-                    os.fsync(writer_comments)
+                    file_comments.flush()
+                    os.fsync(file_comments)
                 print(count)
                 comment_buf = []
 
@@ -243,8 +243,8 @@ if __name__ == "__main__":
             if video["channel_id"] not in channels:
                 channels[video["channel_id"]] = None
             writer_videos.writerow(video)
-            writer_videos.flush()
-            os.fsync(writer_videos)
+            file_videos.flush()
+            os.fsync(file_videos)
         print(count)
 
     if len(comment_buf) > 0:
@@ -253,8 +253,8 @@ if __name__ == "__main__":
             if comment["op_channel_id"] not in channels:
                 channels[comment["op_channel_id"]] = None
             writer_comments.writerow(comment)
-            writer_comments.flush()
-            os.fsync(writer_comments)
+            file_comments.flush()
+            os.fsync(file_comments)
         print(count)
 
     file_comments.close()

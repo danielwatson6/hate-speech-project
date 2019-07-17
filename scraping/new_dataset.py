@@ -75,6 +75,7 @@ def get_missing_comment_data(comments):
         return get_missing_comment_data(comments)
 
     result = []
+    print(response)
     for c, res_item in zip(comments, response["items"]):
         try:
             if "parent_id" in response["snippet"]:
@@ -105,7 +106,7 @@ def get_missing_video_data(videos):
     response = requests.get(
         "https://www.googleapis.com/youtube/v3/videos",
         params=dict(
-            id=",".join([v["id"] for v in videos]),
+            id="|".join([v["id"] for v in videos]),
             part="snippet,statistics",
             key=API_KEY,
             textFormat="plainText",
@@ -188,9 +189,9 @@ if __name__ == "__main__":
     channels = {}
     
     orig_dataset_dirs = os.listdir(path_orig)
-    random.seed(2019)
+    # random.seed(2019)
     random.shuffle(orig_dataset_dirs)
-    for filename in os.listdir(path_orig):
+    for filename in orig_dataset_dirs:
         print(filename)
         rows = pd.read_csv(os.path.join(path_orig, filename)).iterrows()
         count = 0
@@ -233,7 +234,7 @@ if __name__ == "__main__":
 
             elif len(comment_buf) == BUFSIZE:
                 comment_buf = get_missing_comment_data(comment_buf)
-                print(f"  retrieved {len(comment_buf)} videos")
+                print(f"  retrieved {len(comment_buf)} comments")
                 for comment in comment_buf:
                     if comment["op_channel_id"] not in channels:
                         channels[comment["op_channel_id"]] = None

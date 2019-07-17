@@ -23,10 +23,10 @@ def Hyperparameters(value):
 class Model(tf.keras.Model):
     default_hparams = {}
 
-    def __init__(self, save_dir, training=True, **hparams):
+    def __init__(self, save_dir=None, method=None, **hparams):
         super().__init__()
         self._save_dir = save_dir
-        self._training = training
+        self._method = method
         self.hparams = {**self.default_hparams, **hparams}
         self._ckpt = None
 
@@ -45,8 +45,8 @@ class Model(tf.keras.Model):
         return self._save_dir
 
     @property
-    def training(self):
-        return self._training
+    def method(self):
+        return self._method
 
     @property
     def hparams(self):
@@ -66,21 +66,17 @@ class Model(tf.keras.Model):
             self._ckpt = tf.train.Checkpoint(model=self)
         self._ckpt.restore(tf.train.latest_checkpoint(self._save_dir))
 
-    def train(self, dataset):
-        raise NotImplementedError
-
 
 class DataLoader:
     default_hparams = {}
 
-    def __init__(self, training=True, **hparams):
-        self._training = training
+    def __init__(self, method=None, **hparams):
+        self._method = method
         self.hparams = {**self.default_hparams, **hparams}
-        self._data = self.load()
 
     @property
-    def training(self):
-        return self._training
+    def method(self):
+        return self._method
 
     @property
     def hparams(self):
@@ -90,11 +86,10 @@ class DataLoader:
     def hparams(self, value):
         self._hparams = Hyperparameters(value)
 
-    @property
-    def data(self):
-        return self._data
+    def __call__(self, *a, **kw):
+        return self.call(*a, **kw)
 
-    def load(self):
+    def call(self):
         raise NotImplementedError
 
 

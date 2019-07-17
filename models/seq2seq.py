@@ -9,6 +9,7 @@ import tensorflow as tf
 import tensorflow.keras.layers as tfkl
 
 import boilerplate as tfbp
+import utils
 
 
 # TODO: this assumes a word level model.
@@ -55,7 +56,7 @@ class Decoder(tfkl.Layer):
         hidden_size,
         num_layers,
         attention="bahdanau",
-        attention_pos=0,
+        attention_pos=2,
         dropout=0.0,
         **kwargs,
     ):
@@ -95,12 +96,12 @@ class Seq2Seq(tfbp.Model):
         "vocab_size": 20000,
         "hidden_size": 256,
         "attention": "bahdanau",  # "bahdanau" or "luong"
-        "attention_pos": 0,
+        "attention_pos": 2,
         "optimizer": "adam",  # "sgd" or "adam"
         "learning_rate": 0.0005,
         "epochs": 5,
         "dropout": 0.0,
-        "beam_width": 5,
+        "beam_width": 1,
         "corpus": 2,  # 2 or 103
     }
 

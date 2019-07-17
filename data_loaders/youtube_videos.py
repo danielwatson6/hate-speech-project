@@ -1,5 +1,7 @@
 import os
+import re
 
+import numpy as np
 import pandas as pd
 import tensorflow as tf
 
@@ -11,9 +13,9 @@ class YouTubeVideos(tfbp.DataLoader):
     default_hparams = {"batch_size": 32, "corpus": 2, "max_seq_len": 40}
 
     def call(self):
-        if self.hparams.corpus == 2:
+        if self.hparams.corpus == 103:
             vocab_path = os.path.join("data", "wikitext-103-raw")
-        elif self.hparams.corpus == 103:
+        elif self.hparams.corpus == 2:
             vocab_path = os.path.join("data", "wikitext-2")
         else:
             raise ValueError("`corpus` hyperparameter can only attain values 2 or 103.")
@@ -49,14 +51,18 @@ class YouTubeVideos(tfbp.DataLoader):
             data_path = os.path.join(os.environ["DATASETS"], "youtube_right")
             for filename in os.listdir(data_path):
                 df = pd.read_csv(os.path.join(data_path, filename))
+                df = df[df["video"] == 1]
                 for row in df.iterrows():
-                    transcript = re.sub(r"[0-9]+:[0-9]+", " ", row[0]["content"])
-                    transcript = re.sub(r"\n", " ", transcript.lower().strip())
-                    transcript = transcript.split()
+                    row = row[1]
+                    transcript = re.sub(
+                        r"\n?[0-9][0-9]:[0-9][0-9]\n?", " ", str(row["content"])
+                    )
+                    transcript = transcript.lower().strip().split()
                     i = 0
                     batch = []
                     while i < len(transcript):
-                        batch.append(transcript[i : i + self.hparams.max_seq_len])
+                        tokens = transcript[i : i + self.hparams.max_seq_len]
+                        batch.append(" ".join(tokens))
                         i += self.hparams.max_seq_len
                     yield batch
 

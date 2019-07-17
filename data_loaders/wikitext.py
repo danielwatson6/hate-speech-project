@@ -10,9 +10,9 @@ class WikiText(tfbp.DataLoader):
     default_hparams = {"batch_size": 32, "corpus": 2, "max_seq_len": 40}
 
     def call(self):
-        if self.hparams.corpus == 2:
+        if self.hparams.corpus == 103:
             data_path = os.path.join("data", "wikitext-103-raw")
-        elif self.hparams.corpus == 103:
+        elif self.hparams.corpus == 2:
             data_path = os.path.join("data", "wikitext-2")
         else:
             raise ValueError("`corpus` hyperparameter can only attain values 2 or 103.")
@@ -26,7 +26,7 @@ class WikiText(tfbp.DataLoader):
             0,
             tf.int64,
             tf.lookup.TextFileIndex.LINE_NUMBER,
-            vocab_size=self.hparams.vocab_size,
+            vocab_size=self.hparams.vcab_size,
         )
         id_to_word_init = tf.lookup.TextFileInitializer(
             vocab_path,

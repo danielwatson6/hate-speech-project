@@ -1,6 +1,7 @@
 from csv import DictWriter
 from datetime import datetime
 import os
+import random
 import sys
 import time
 
@@ -104,7 +105,7 @@ def get_missing_video_data(videos):
     response = requests.get(
         "https://www.googleapis.com/youtube/v3/videos",
         params=dict(
-            id="|".join([v["id"] for v in videos]),
+            id=",".join([v["id"] for v in videos]),
             part="snippet,statistics",
             key=API_KEY,
             textFormat="plainText",
@@ -119,6 +120,7 @@ def get_missing_video_data(videos):
         return get_missing_video_data(videos)
 
     result = []
+    print(response)
     for v, res_item in zip(videos, response["items"]):
         try:
             v["channel_id"] = res_item["snippet"]["channelId"]
@@ -155,7 +157,7 @@ def get_missing_channel_data(channel):
 
 
 def writerow(row, keys, path):
-    print("    " + row["content"][:32])
+    print("    " + row["content"][:28])
     with open(path, mode="a", newline="") as f:
         writer = DictWriter(f, keys)
         # Write the header if the file is empty.
@@ -184,7 +186,10 @@ if __name__ == "__main__":
 
     # Keep a dict to query channel by ids without repetition.
     channels = {}
-
+    
+    orig_dataset_dirs = os.listdir(path_orig)
+    random.seed(2019)
+    random.shuffle(orig_dataset_dirs)
     for filename in os.listdir(path_orig):
         print(filename)
         rows = pd.read_csv(os.path.join(path_orig, filename)).iterrows()

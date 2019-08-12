@@ -168,6 +168,14 @@ def writerow(row, keys, path):
         writer.writerow(row)
 
 
+def writechid(chid, channels):
+    chid = chid.strip()
+    if chid not in channels:
+        channels[chid] = None
+        with open(os.path.join("data", "youtube_new", "channel_ids.txt"), "a") as f:
+            f.write(chid + "\n")
+
+
 if __name__ == "__main__":
 
     BUFSIZE = 20
@@ -179,8 +187,17 @@ if __name__ == "__main__":
 
     path_orig = os.path.join(os.environ["DATASETS"], "youtube_right")
     path_new = os.path.join("data", "youtube_new")
+    
+    WRITTEN_IDS  = {}
+    if os.path.exists(path_new):
+        for filename in ["comments.csv", "videos.csv", "channels.csv"]:
+            filepath = os.path.join(path_new, filename)
+            if os.path.isfile(filepath):
+                with open(filepath) as f:
+                    for line in f:
+                        WRITTEN_IDS[line.split(",")[0]] = None
 
-    if not os.path.exists(path_new):
+    else:
         os.makedirs(path_new)
 
     path_comments = os.path.join(path_new, "comments.csv")
@@ -188,6 +205,10 @@ if __name__ == "__main__":
 
     # Keep a dict to query channel by ids without repetition.
     channels = {}
+    if os.path.isfile(os.path.join(path_new, "channel_ids.txt")):
+        with open(os.path.join(path_new, "channel_ids.txt")) as f:
+            for line in f:
+                channels[line.strip()] = None
     
     for filename in os.listdir(path_orig):
         print(filename)
@@ -202,7 +223,7 @@ if __name__ == "__main__":
                 continue  # skip csv header
             row = row[1]
 
-            if int(row["video"]):
+            if int(row["video"]) and row["video_id"] not in WRITTEN_IDS:
                 video = {
                     "id": row["video_id"],
                     "title": row["video_title"],
@@ -212,7 +233,7 @@ if __name__ == "__main__":
                 }
                 video_buf.append(video)
 
-            else:
+            elif row["index"] not in WRITTEN_IDS:
                 comment = {
                     "id": row["index"],
                     "video_id": row["video_id"],
@@ -225,17 +246,15 @@ if __name__ == "__main__":
                 video_buf = get_missing_video_data(video_buf)
                 print(f"  retrieved {len(video_buf)} videos")
                 for video in video_buf:
-                    if video["channel_id"] not in channels:
-                        channels[video["channel_id"]] = None
+                    writechid(video["channel_id"], channels)
                     writerow(video, VIDEO_KEYS, path_videos)
                 video_buf = []
 
-            elif len(comment_buf) == BUFSIZE:
+            if len(comment_buf) == BUFSIZE:
                 comment_buf = get_missing_comment_data(comment_buf)
                 print(f"  retrieved {len(comment_buf)} comments")
                 for comment in comment_buf:
-                    if comment["op_channel_id"] not in channels:
-                        channels[comment["op_channel_id"]] = None
+                    writechid(comment["op_channel_id"], channels)
                     writerow(comment, COMMENT_KEYS, path_comments)
                 comment_buf = []
 
@@ -243,30 +262,24 @@ if __name__ == "__main__":
     if len(video_buf) > 0:
         video_buf = get_missing_video_data(video_buf)
         for video in video_buf:
-            if video["channel_id"] not in channels:
-                channels[video["channel_id"]] = None
+            writechid(video["channel_id"], channels)
             writerow(video, VIDEO_KEYS, path_videos)
 
     if len(comment_buf) > 0:
         comment_buf = get_missing_comment_data(comment_buf)
         for comment in comment_buf:
-            if comment["op_channel_id"] not in channels:
-                channels[comment["op_channel_id"]] = None
+            writechid(comment["op_channel_id"], channels)
             writerow(comment, COMMENT_KEYS, path_comments)
 
     print("Successfully created videos.csv and comments.csv files.")
 
-    with open(os.path.join(path_new, "channel_ids.txt"), "w") as f:
-        for channel_id in channels.keys():
-            f.write(channel_id + "\n")
-
-    # file_channels = open(os.path.join(path_new, "channels.csv"), "w", newline="")
-    # writer_channels = DictWriter(file_comments, CHANNEL_KEYS)
-    # writer_channels.writeheader()
+    file_channels = open(os.path.join(path_new, "channels.csv"), mode="a", newline="")
+    writer_channels = DictWriter(file_comments, CHANNEL_KEYS)
+    writer_channels.writeheader()
 
     # for channel_id in channels.keys():
     #     channel = {"id": channel_id}
     #     get_missing_channel_data(channel)
     #     writer_channels.writerow(channel)
 
-    # file_channels.close()
+    file_channels.close()

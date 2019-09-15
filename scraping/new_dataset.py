@@ -182,13 +182,13 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         BUFSIZE = int(sys.argv[1])
 
-    with open(os.path.join("scraping", "youtube_api_key")) as f:
+    with open(os.path.join("secrets", "youtube_api_key")) as f:
         API_KEY = f.read().strip()
 
     path_orig = os.path.join(os.environ["DATASETS"], "youtube_right")
     path_new = os.path.join("data", "youtube_new")
-    
-    WRITTEN_IDS  = {}
+
+    WRITTEN_IDS = {}
     if os.path.exists(path_new):
         for filename in ["comments.csv", "videos.csv", "channels.csv"]:
             filepath = os.path.join(path_new, filename)
@@ -209,7 +209,7 @@ if __name__ == "__main__":
         with open(os.path.join(path_new, "channel_ids.txt")) as f:
             for line in f:
                 channels[line.strip()] = None
-    
+
     for filename in os.listdir(path_orig):
         print(filename)
         rows = pd.read_csv(os.path.join(path_orig, filename)).iterrows()

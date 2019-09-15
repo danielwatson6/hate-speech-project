@@ -83,7 +83,7 @@ def scrape():
 
 if __name__ == "__main__":
 
-    with open(os.path.join("scraping", "twitter_api.json")) as f:
+    with open(os.path.join("secrets", "twitter_api.json")) as f:
         api_stuff = json.load(f)
     consumer_key = api_stuff["consumer_key"]
     consumer_secret = api_stuff["consumer_secret"]

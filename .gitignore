@@ -3,8 +3,7 @@ data/
 env/
 model_files/
 projector/
-scraping/twitter_api.json
-scraping/youtube_api_key
+secrets/
 
 # Python
 *.py[cod]

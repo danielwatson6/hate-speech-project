@@ -1,9 +1,14 @@
 """Miscellaneous methods."""
 
+from contextlib import suppress
 import os.path
 import re
 
+import firebase_admin
+from firebase_admin import credentials
 from gensim.models import KeyedVectors
+from google.api_core import exceptions
+import pandas as pd
 
 
 def tokenize(s):
@@ -66,10 +71,53 @@ def twitter_gen():
 
 
 def youtube_samples_gen():
-    """Generator for the youtube samples."""
+    """Generator for the youtube samples dataset."""
     with open(os.path.join("data", "youtube_video_samples.txt")) as f:
         for line in f:
             yield tokenize(line), 0
     with open(os.path.join("data", "youtube_comment_samples.txt")) as f:
         for line in f:
             yield tokenize(line), 1
+
+
+def firebase(backup=False, verbose=True):
+    """Return a firebase SDK client instance."""
+    if backup:
+        cred = credentials.Certificate(
+            os.path.join("secrets", "online-extremism-backup.json")
+        )
+        app = firebase_admin.initialize_app(cred, name="online-extremism-backup")
+    else:
+        cred = credentials.Certificate(os.path.join("secrets", "online-extremism.json"))
+        app = firebase_admin.initialize_app(cred)
+    client = firestore.client(app)
+    if verbose:
+        print(f"Connected to Firebase SDK ({client.project})")
+    return client
+
+
+def timeout_stream(collection_ref, sleep_time=60, verbose=True):
+    """Add a timeout handler for firebase collection streams."""
+    stream = iter(cref.stream())
+    with suppress(StopIteration):
+        while True:
+            try:
+                yield next(stream)
+            except exceptions.DeadlineExceeded:
+                if verbose:
+                    print(f"Caught `DeadlineExceeded` error, sleeping {sleep_time}s...")
+                time.sleep(sleep_time)
+
+
+def timeout_do(method, doc_ref, sleep_time=60, verbose=True, *args):
+    """Add a timeout handler for an action on an individual firebase document."""
+    try:
+        method = getattr(doc_ref, method)
+        if not len(args):
+            return method()
+        return method(*args)
+    except exceptions.DeadlineExceeded:
+        if verbose:
+            print(f"Caught `DeadlineExceeded` error, sleeping {sleep_time}s...")
+        time.sleep(sleep_time)
+        timeout_write(doc_ref, value)

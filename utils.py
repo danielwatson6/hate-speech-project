@@ -5,7 +5,7 @@ import os.path
 import re
 
 import firebase_admin
-from firebase_admin import credentials
+from firebase_admin import credentials, firestore
 from gensim.models import KeyedVectors
 from google.api_core import exceptions
 import pandas as pd

@@ -109,11 +109,11 @@ def timeout_stream(collection_ref, sleep_time=60, verbose=True):
                 time.sleep(sleep_time)
 
 
-def timeout_do(method, doc_ref, sleep_time=60, verbose=True, *args):
+def timeout_do(method, doc_ref, args=None, sleep_time=60, verbose=True):
     """Add a timeout handler for an action on an individual firebase document."""
     try:
         method = getattr(doc_ref, method)
-        if not len(args):
+        if args is None:
             return method()
         return method(*args)
     except exceptions.DeadlineExceeded:

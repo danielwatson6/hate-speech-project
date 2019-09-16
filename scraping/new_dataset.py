@@ -159,7 +159,7 @@ def get_missing_channel_data(channel):
 
 
 def writerow(row, keys, path):
-    print("    " + row["content"][:28])
+    print("    " + str(row["content"])[:28])
     with open(path, mode="a", newline="") as f:
         writer = DictWriter(f, keys)
         # Write the header if the file is empty.

@@ -27,7 +27,7 @@ class MF_Doc2Vec(MoralFoundations):
     def make_encoder(self):
         encoder = tf.keras.Sequential()
         for hidden_size in self.hparams.hidden_sizes:
-            encoder.add(tfkl.Dense(hidden_size), activation=mish)
+            encoder.add(tfkl.Dense(hidden_size, activation=mish))
             if self.hparams.dropout > 0:
                 encoder.add(tfkl.Dropout(self.hparams.dropout))
         return encoder

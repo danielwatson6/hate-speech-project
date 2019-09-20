@@ -97,12 +97,12 @@ class MF(tfbp.Model):
 
                 with tf.GradientTape() as tape:
                     train_loss = loss_fn(y, self(x))
-                    if self.hparams.loss == "cos":
+                    if self.hparams.loss == "cosine_similarity":
                         train_loss = -train_loss
                 grads = tape.gradient(train_loss, self.trainable_weights)
                 opt.apply_gradients(zip(grads, self.trainable_weights))
 
-                if self.hparams.loss == "cos":
+                if self.hparams.loss == "cosine_similarity":
                     train_loss = -train_loss
 
                 step = self.step.numpy()

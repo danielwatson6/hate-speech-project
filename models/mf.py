@@ -15,7 +15,7 @@ class MF(tfbp.Model):
     default_hparams = {
         "batch_size": 32,
         "vocab_size": 28371,  # all vocabulary
-        "fine_tune_embeds": True,
+        "fine_tune_embeds": False,
         "loss": "cos",  # "huber" or "cos"
         "optimizer": "sgd",  # "sgd" or "adam"
         "learning_rate": 0.1,
@@ -120,6 +120,11 @@ class MF(tfbp.Model):
                         tf.summary.scalar(self.hparams.loss, train_loss, step=step)
                     with valid_writer.as_default():
                         tf.summary.scalar(self.hparams.loss, valid_loss, step=step)
+                        tf.summary.scalar(
+                            "generalization_error",
+                            tf.math.abs(train_loss - valid_loss),
+                            step=step,
+                        )
                 else:
                     print("Step {} (train_loss={:.4f})".format(step, train_loss))
 

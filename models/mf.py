@@ -13,22 +13,18 @@ import utils
 @tfbp.default_export
 class MF(tfbp.Model):
     default_hparams = {
-        "rnn_layers": 2,
         "batch_size": 32,
-        "vocab_size": 28373,  # all vocabulary
-        "hidden_size": 512,
+        "vocab_size": 28371,  # all vocabulary
         "fine_tune_embeds": True,
         "loss": "cos",  # "huber" or "cos"
         "optimizer": "sgd",  # "sgd" or "adam"
         "learning_rate": 0.1,
         "num_valid": 4771,  # 24771 training examples
         "epochs": 20,
-        "dropout": 0.0,
     }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         self.step = tf.Variable(0, trainable=False)
         self.epoch = tf.Variable(0, trainable=False)
 
@@ -56,19 +52,11 @@ class MF(tfbp.Model):
         )
         self.embed.trainable = self.hparams.fine_tune_embeds
 
-        self.encoder = tf.keras.Sequential()
-        for _ in range(self.hparams.rnn_layers):
-            self.encoder.add(
-                tfkl.Bidirectional(
-                    tfkl.GRU(
-                        self.hparams.hidden_size,
-                        dropout=self.hparams.dropout,
-                        return_sequences=True,
-                    )
-                )
-            )
-        self.encoder.add(tfkl.Lambda(lambda x: tf.reduce_max(x, axis=1)))
-        self.encoder.add(tfkl.Dense(6, activation=tf.nn.tanh))
+        self.encoder = self.make_encoder()
+        self.encoder.add(tfkl.Dense(6, activation=tf.math.tanh))
+
+    def make_encoder(self):
+        raise NotImplementedError
 
     def call(self, x):
         embeds = self.embed(x)
@@ -139,10 +127,11 @@ class MF(tfbp.Model):
 
             print(f"Epoch {self.epoch.numpy()} finished")
             self.epoch.assign_add(1)
-            cos_score, mse_scores = self._evaluate(dataset)
+            cos_score, mae_scores = self._evaluate(dataset)
             with valid_writer.as_default():
                 tf.summary.scalar("total_cos", cos_score, step=step)
-                tf.summary.histogram("mse", mse_scores, step=step)
+                tf.summary.scalar("avg_mae", tf.reduce_mean(mae_scores), step=step)
+                tf.summary.histogram("mae", mae_scores, step=step)
 
             if cos_score > max_eval_score:
                 self.save()
@@ -150,25 +139,25 @@ class MF(tfbp.Model):
     def _evaluate(self, dataset):
         valid_dataset = dataset.take(self.hparams.num_valid // self.hparams.batch_size)
         cos_sim = tf.losses.CosineSimilarity(reduction=tf.losses.Reduction.NONE)
-        mse = lambda x, y: (x - y) ** 2
+        mae = lambda x, y: tf.math.abs(x - y)
         all_cos_sim = []
-        all_mse = []
+        all_mae = []
         for x, y in valid_dataset:
             y_pred = self(x)
-            for a, b in zip(cos_sim(y, y_pred), mse(y, y_pred)):
+            for a, b in zip(cos_sim(y, y_pred), mae(y, y_pred)):
                 all_cos_sim.append(a)
-                all_mse.append(b)
+                all_mae.append(b)
 
         cos_score = tf.reduce_mean(all_cos_sim).numpy()
-        mse_scores = tf.reduce_mean(all_mse, axis=0).numpy()
+        mae_scores = tf.reduce_mean(all_mae, axis=0).numpy()
         print("cos\t", cos_score)
-        print("authority\t", mse_scores[0])
-        print("fairness\t", mse_scores[1])
-        print("care\t", mse_scores[2])
-        print("loyalty\t", mse_scores[3])
-        print("purity\t", mse_scores[4])
-        print("non_moral\t", mse_scores[5], flush=True)
-        return cos_score, mse_scores
+        print("authority\t", mae_scores[0])
+        print("fairness\t", mae_scores[1])
+        print("care\t", mae_scores[2])
+        print("loyalty\t", mae_scores[3])
+        print("purity\t", mae_scores[4])
+        print("non_moral\t", mae_scores[5], flush=True)
+        return cos_score, mae_scores
 
     def evaluate(self, data_loader):
         dataset = data_loader()

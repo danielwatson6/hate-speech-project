@@ -3,11 +3,11 @@
 from contextlib import suppress
 import os.path
 import re
+import time
 
 import firebase_admin
 from firebase_admin import credentials
 from gensim.models import KeyedVectors
-from google.api_core import exceptions
 import pandas as pd
 
 
@@ -103,21 +103,21 @@ def timeout_stream(collection_ref, sleep_time=60, verbose=True):
         while True:
             try:
                 yield next(stream)
-            except exceptions.DeadlineExceeded:
+            except:
                 if verbose:
-                    print(f"Caught `DeadlineExceeded` error, sleeping {sleep_time}s...")
+                    print(f"Quota/deadline exceeded, sleeping {sleep_time}s...")
                 time.sleep(sleep_time)
 
 
-def timeout_do(method, doc_ref, sleep_time=60, verbose=True, *args):
+def timeout_do(method, doc_ref, args=None, sleep_time=60, verbose=True):
     """Add a timeout handler for an action on an individual firebase document."""
     try:
         method = getattr(doc_ref, method)
-        if not len(args):
+        if args is None:
             return method()
         return method(*args)
-    except exceptions.DeadlineExceeded:
+    except:
         if verbose:
-            print(f"Caught `DeadlineExceeded` error, sleeping {sleep_time}s...")
+            print(f"Quota/deadline exceeded, sleeping {sleep_time}s...")
         time.sleep(sleep_time)
-        timeout_write(doc_ref, value)
+        timeout_do(method, doc_ref, args=args, sleep_time=sleep_time, verbose=verbose)

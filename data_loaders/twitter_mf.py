@@ -11,7 +11,7 @@ import boilerplate as tfbp
 
 @tfbp.default_export
 class MF(tfbp.DataLoader):
-    default_hparams = {"batch_size": 32, "vocab_size": 28373}
+    default_hparams = {"batch_size": 32, "vocab_size": 28371}
 
     def call(self):
         vocab_path = os.path.join("data", "twitter_mf.clean.vocab")
@@ -33,8 +33,6 @@ class MF(tfbp.DataLoader):
             with open(vocab_path, "w") as f:
                 f.write("<pad>\n")
                 f.write("<unk>\n")
-                f.write("<sos>\n")
-                f.write("<eos>\n")
 
                 for word, _ in counter.most_common():
                     f.write(word + "\n")
@@ -61,7 +59,7 @@ class MF(tfbp.DataLoader):
         return dataset.prefetch(1)
 
     def _dict_to_pair(self, batch):
-        tweets = batch["tweet"] + " <eos>"
+        tweets = batch["tweet"]
         tweets = tf.strings.split(tweets).to_tensor(default_value="<pad>")
         tweets = self._word_to_id.lookup(tweets)
 

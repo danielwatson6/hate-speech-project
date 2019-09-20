@@ -16,7 +16,7 @@ class MF(tfbp.Model):
         "batch_size": 32,
         "vocab_size": 28371,  # all vocabulary
         "fine_tune_embeds": False,
-        "loss": "cos",  # "huber" or "cos"
+        "loss": "cosine_similarity",  # "huber" or "cosine_similarity"
         "optimizer": "sgd",  # "sgd" or "adam"
         "learning_rate": 0.1,
         "num_valid": 4771,  # 24771 training examples
@@ -117,9 +117,13 @@ class MF(tfbp.Model):
                     )
 
                     with train_writer.as_default():
-                        tf.summary.scalar(self.hparams.loss, train_loss, step=step)
+                        tf.summary.scalar(
+                            f"loss_{self.hparams.loss}", train_loss, step=step
+                        )
                     with valid_writer.as_default():
-                        tf.summary.scalar(self.hparams.loss, valid_loss, step=step)
+                        tf.summary.scalar(
+                            f"loss_{self.hparams.loss}", valid_loss, step=step
+                        )
                         tf.summary.scalar(
                             "generalization_error",
                             tf.math.abs(train_loss - valid_loss),
@@ -134,9 +138,13 @@ class MF(tfbp.Model):
             self.epoch.assign_add(1)
             cos_score, mae_scores = self._evaluate(dataset)
             with valid_writer.as_default():
-                tf.summary.scalar("total_cos", cos_score, step=step)
-                tf.summary.scalar("avg_mae", tf.reduce_mean(mae_scores), step=step)
-                tf.summary.histogram("mae", mae_scores, step=step)
+                tf.summary.scalar("eval_cosine_similarity", cos_score, step=step)
+                tf.summary.scalar(
+                    "eval_mean_absolute_error", tf.reduce_mean(mae_scores), step=step
+                )
+                tf.summary.histogram(
+                    "eval_mean_absolute_error_per_component", mae_scores, step=step
+                )
 
             if cos_score > max_eval_score:
                 self.save()

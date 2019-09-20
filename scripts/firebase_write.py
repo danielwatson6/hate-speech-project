@@ -9,13 +9,10 @@ import utils
 def parse_row(row):
     row = row.to_dict()
     row["like_count"] = int(row["like_count"])
-    row["date_posted"] = arrow.get(row["date_posted"], 'YYYY_MM_DD_HH_mm_ss').timestamp
+    row["date_posted"] = arrow.get(row["date_posted"], "YYYY_MM_DD_HH_mm_ss").timestamp
     row["date_scraped"] = arrow.get(
         " ".join(row["date_scraped"].split(".")[0].split("T"))
     ).timestamp
-    
-    if "parent_comment_id" in row and row["parent_comment_id"] == float("nan"):
-        row["parent_comment_id"] = ""
 
     if "dislike_count" in row:
         row["dislike_count"] = int(row["dislike_count"])
@@ -23,6 +20,7 @@ def parse_row(row):
         row["view_count"] = int(row["view_count"])
 
     return (row,)
+
 
 if __name__ == "__main__":
     db = utils.firebase()

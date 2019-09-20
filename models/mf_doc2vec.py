@@ -23,6 +23,8 @@ class MF_Doc2Vec(MoralFoundations):
         "reduction": "mean",
         "hidden_sizes": [512],
         "dropout": 0.0,
+        "optimizer": "adam",
+        "learning_rate": 0.001,
     }
 
     def make_encoder(self):

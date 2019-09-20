@@ -14,7 +14,7 @@ import utils
 class MF(tfbp.Model):
     default_hparams = {
         "batch_size": 32,
-        "vocab_size": 28371,  # all vocabulary
+        "vocab_size": 25047,  # all vocabulary
         "fine_tune_embeds": False,
         "loss": "cosine_similarity",  # "huber" or "cosine_similarity"
         "optimizer": "sgd",  # "sgd" or "adam"

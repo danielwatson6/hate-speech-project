@@ -11,7 +11,7 @@ import boilerplate as tfbp
 
 @tfbp.default_export
 class MF(tfbp.DataLoader):
-    default_hparams = {"batch_size": 32, "vocab_size": 28371}
+    default_hparams = {"batch_size": 32, "vocab_size": 25047}
 
     def call(self):
         vocab_path = os.path.join("data", "twitter_mf.clean.vocab")

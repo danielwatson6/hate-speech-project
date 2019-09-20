@@ -33,7 +33,7 @@ class Model(tf.keras.Model):
         hparams_path = os.path.join(save_dir, "hparams.json")
         if os.path.isfile(hparams_path):
             with open(hparams_path) as f:
-                self.hparams = json.load(f)
+                self.hparams = {**json.load(f), **hparams}
         else:
             if not os.path.exists(save_dir):
                 os.makedirs(save_dir)

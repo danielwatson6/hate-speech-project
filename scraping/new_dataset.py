@@ -77,8 +77,8 @@ def get_missing_comment_data(comments):
     print(response)
     for c, res_item in zip(comments, response["items"]):
         try:
-            if "parent_id" in res_item["snippet"]:
-                c["parent_comment_id"] = res_item["snippet"]["parent_id"]
+            if "parentId" in res_item["snippet"]:
+                c["parent_comment_id"] = res_item["snippet"]["parentId"]
             else:
                 c["parent_comment_id"] = ""
             c["op_channel_id"] = res_item["snippet"]["authorChannelId"]["value"]

@@ -12,10 +12,6 @@ import tensorflow as tf
 MF_KEYS = ["authority", "fairness", "care", "loyalty", "purity", "non_moral"]
 
 
-mf = None
-ambiguity = None
-
-
 def print_correlations(pairs):
     mf_vecs, ambg_scores = zip(*pairs)
     mf_vecs = np.array(mf_vecs).T
@@ -25,7 +21,7 @@ def print_correlations(pairs):
         print("  scc {:.4f} (p={:.4f})".format(*spearmanr(mf_dim_vals, ambg_scores)))
 
 
-def wordnet_score(x):
+def wordnet_score(x, reduction="mean"):
     scores = []
     for word in x.numpy():
         word = word.decode("utf8")
@@ -33,10 +29,19 @@ def wordnet_score(x):
             continue
         if not re.match(r"[A-Za-z'-]+", word):
             continue
-        scores.append(len(wn.synsets(word)))
+        n = len(wn.synsets(word))
+        if n > 0:
+            scores.append()
+
     if len(scores) == 0:
         return 0
-    return sum(scores) / len(scores)
+
+    if reduction == "median":
+        return np.median(scores)
+    mean = sum(scores) / len(scores)
+    if reduction == "mean":
+        return mean
+    return sum(abs(x - mean) for x in scores) / len(scores)
 
 
 if __name__ == "__main__":
@@ -66,9 +71,9 @@ if __name__ == "__main__":
     )
     word_to_id = tf.lookup.StaticHashTable(word_to_id_init, 1).lookup
 
-    # ============================================================= #
-    # Correlation for twitter moral foundations validation dataset. #
-    # ============================================================= #
+    # =================================================== #
+    # Correlations for twitter moral foundations dataset. #
+    # =================================================== #
 
     twitter_mf = tf.data.experimental.make_csv_dataset(
         os.path.join("data", "twitter_mf.clean.shuffled.csv"),
@@ -77,6 +82,8 @@ if __name__ == "__main__":
         shuffle=False,
         num_rows_for_inference=None,
     )
+
+    # We include correlations for the moral labels of the entire data.
 
     def _mf_gold_map(batch):
         tweets = tf.strings.split(batch["tweet"]).to_tensor(default_value="<pad>")
@@ -95,6 +102,8 @@ if __name__ == "__main__":
     print("Twitter MF gold vs. wordnet:")
     print_correlations(twitter_mf_gold_pairs)
 
+    # But also correlations for the inferred model's scores on the validation data.
+
     def _mf_valid_map(batch):
         tweets = tf.strings.split(batch["tweet"]).to_tensor(default_value="<pad>")
         return tweets, word_to_id(tweets)
@@ -109,3 +118,7 @@ if __name__ == "__main__":
 
     print("\nTwitter MF validation output vs. wordnet:")
     print_correlations(twitter_mf_valid_pairs)
+
+    # =================================================== #
+    # Correlations for YouTube comment and video samples. #
+    # =================================================== #

@@ -63,7 +63,10 @@ class MF(tfbp.DataLoader):
         tweets = tf.strings.split(tweets).to_tensor(default_value="<pad>")
         tweets = self._word_to_id.lookup(tweets)
 
-        labels = [batch[k] for k in batch.keys() if k not in ["id", "tweet"]]
+        labels = [
+            batch[k]
+            for k in ["authority", "fairness", "care", "loyalty", "purity", "non_moral"]
+        ]
         labels = tf.stack(labels)
         labels = tf.cast(labels, tf.float32)
         labels = tf.transpose(labels)

@@ -1,9 +1,9 @@
 import json
 import os
+import re
 import sys
 
 from nltk.corpus import wordnet as wn
-from nltk.tokenize import word_tokenize
 import numpy as np
 from scipy.stats import pearsonr, spearmanr
 import tensorflow as tf
@@ -27,8 +27,15 @@ def print_correlations(pairs):
 
 def wordnet_score(x):
     scores = []
-    for word in word_tokenize:
-        scores.append(len(wn.synsets(x)))
+    for word in x.numpy():
+        word = word.decode("utf8")
+        if word == "ACCOUNT":
+            continue
+        if not re.match(r"[A-Za-z'-]+", word):
+            continue
+        scores.append(len(wn.synsets(word)))
+    if len(scores) == 0:
+        return 0
     return sum(scores) / len(scores)
 
 
@@ -43,7 +50,7 @@ if __name__ == "__main__":
     with open(runpy_json_path) as f:
         module = json.load(f)["model"]
 
-    MFModel = getattr(__import__(f"models.{module}", {module}))
+    MFModel = getattr(__import__(f"models.{module}"), module)
     mf = MFModel(os.path.join("experiments", save_dir))
     mf.restore()
 
@@ -83,7 +90,7 @@ if __name__ == "__main__":
     twitter_mf_gold = twitter_mf.map(_mf_gold_map)
     for xs, ys in twitter_mf_gold:
         for x, y in zip(xs, ys):
-            twitter_mf_gold_pairs.append(y, wordnet_score(x))
+            twitter_mf_gold_pairs.append([y, wordnet_score(x)])
 
     print("Twitter MF gold vs. wordnet:")
     print_correlations(twitter_mf_gold_pairs)
@@ -98,7 +105,7 @@ if __name__ == "__main__":
     for xs, xs_ids in twitter_mf_valid:
         ys = mf(xs_ids)
         for x, y in zip(xs, ys):
-            twitter_mf_valid_pairs.append(y, wordnet_score(x))
+            twitter_mf_valid_pairs.append([y, wordnet_score(x)])
 
     print("\nTwitter MF validation output vs. wordnet:")
     print_correlations(twitter_mf_valid_pairs)

@@ -79,8 +79,8 @@ class MF(tfbp.Model):
         # Train/validation split.
         dataset = data_loader()
         n = self.hparams.num_valid // self.hparams.batch_size
-        train_dataset = dataset.skip(n).shuffle(10000)
-        valid_dataset = iter(dataset.take(n).shuffle(10000).repeat())
+        train_dataset = dataset.skip(n).shuffle(24771 - self.hparams.num_valid)
+        valid_dataset = iter(dataset.take(n).shuffle(self.hparams.num_valid).repeat())
 
         # TensorBoard writers.
         train_writer = tf.summary.create_file_writer(
@@ -173,5 +173,4 @@ class MF(tfbp.Model):
         return cos_score, mae_scores
 
     def evaluate(self, data_loader):
-        dataset = data_loader()
-        self._evaluate(dataset)
+        self._evaluate(data_loader())

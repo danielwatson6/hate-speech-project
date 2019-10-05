@@ -15,12 +15,12 @@ class MF(tfbp.Model):
     default_hparams = {
         "batch_size": 32,
         "vocab_size": 25047,  # all vocabulary
-        "fine_tune_embeds": False,
+        "fine_tune_embeds": True,
         "loss": "cosine_similarity",  # "huber" or "cosine_similarity"
         "optimizer": "sgd",  # "sgd" or "adam"
         "learning_rate": 0.1,
         "num_valid": 4771,  # 24771 training examples
-        "epochs": 20,
+        "epochs": 10,
     }
 
     def __init__(self, *args, **kwargs):

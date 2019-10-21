@@ -95,49 +95,49 @@ if __name__ == "__main__":
     # Correlations for twitter moral foundations dataset. #
     # =================================================== #
 
-    # twitter_mf = tf.data.experimental.make_csv_dataset(
-    #     os.path.join("data", "twitter_mf.clean.shuffled.csv"),
-    #     mf.hparams.batch_size,
-    #     num_epochs=1,
-    #     shuffle=False,
-    #     num_rows_for_inference=None,
-    # )
+    twitter_mf = tf.data.experimental.make_csv_dataset(
+        os.path.join("data", "twitter_mf.clean.shuffled.csv"),
+        mf.hparams.batch_size,
+        num_epochs=1,
+        shuffle=False,
+        num_rows_for_inference=None,
+    )
 
-    # # We include correlations for the moral labels of the entire data.
+    # We include correlations for the moral labels of the entire data.
 
-    # def _mf_gold_map(batch):
-    #     tweets = tf.strings.split(batch["tweet"]).to_tensor(default_value="<pad>")
-    #     labels = [batch[k] for k in MF_KEYS]
-    #     labels = tf.stack(labels)
-    #     labels = tf.cast(labels, tf.float32)
-    #     labels = tf.transpose(labels)
-    #     return tweets, labels
+    def _mf_gold_map(batch):
+        tweets = tf.strings.split(batch["tweet"]).to_tensor(default_value="<pad>")
+        labels = [batch[k] for k in MF_KEYS]
+        labels = tf.stack(labels)
+        labels = tf.cast(labels, tf.float32)
+        labels = tf.transpose(labels)
+        return tweets, labels
 
-    # twitter_mf_gold_pairs = []
-    # twitter_mf_gold = twitter_mf.map(_mf_gold_map)
-    # for xs, ys in twitter_mf_gold:
-    #     for x, y in zip(xs, ys):
-    #         twitter_mf_gold_pairs.append([y, wordnet_score(x)])
+    twitter_mf_gold_pairs = []
+    twitter_mf_gold = twitter_mf.map(_mf_gold_map)
+    for xs, ys in twitter_mf_gold:
+        for x, y in zip(xs, ys):
+            twitter_mf_gold_pairs.append([y, wordnet_score(x)])
 
-    # plot_correlations(twitter_mf_gold_pairs, "Twitter MF gold vs. wordnet")
+    plot_correlations(twitter_mf_gold_pairs, "Twitter MF gold vs. wordnet")
 
-    # # But also correlations for the inferred model's scores on the validation data.
+    # But also correlations for the inferred model's scores on the validation data.
 
-    # def _mf_valid_map(batch):
-    #     tokens = tf.strings.split(batch["tweet"]).to_tensor(default_value="<pad>")
-    #     return tokens, word_to_id(tokens)
+    def _mf_valid_map(batch):
+        tokens = tf.strings.split(batch["tweet"]).to_tensor(default_value="<pad>")
+        return tokens, word_to_id(tokens)
 
-    # twitter_mf_valid_pairs = []
-    # twitter_mf_valid = twitter_mf.take(mf.hparams.num_valid // mf.hparams.batch_size)
-    # twitter_mf_valid = twitter_mf_valid.map(_mf_valid_map)
-    # for xs, xs_ids in twitter_mf_valid:
-    #     ys = mf(xs_ids)
-    #     for x, y in zip(xs, ys):
-    #         twitter_mf_valid_pairs.append([y, wordnet_score(x)])
+    twitter_mf_valid_pairs = []
+    twitter_mf_valid = twitter_mf.take(mf.hparams.num_valid // mf.hparams.batch_size)
+    twitter_mf_valid = twitter_mf_valid.map(_mf_valid_map)
+    for xs, xs_ids in twitter_mf_valid:
+        ys = mf(xs_ids)
+        for x, y in zip(xs, ys):
+            twitter_mf_valid_pairs.append([y, wordnet_score(x)])
 
-    # plot_correlations(
-    #     twitter_mf_valid_pairs, "Twitter MF validation output vs. wordnet"
-    # )
+    plot_correlations(
+        twitter_mf_valid_pairs, "Twitter MF validation output vs. wordnet"
+    )
 
     # =================================================== #
     # Correlations for YouTube comment and video samples. #
@@ -147,18 +147,18 @@ if __name__ == "__main__":
         tokens = tf.strings.split(batch).to_tensor(default_value="<pad>")
         return tokens, word_to_id(tokens)
 
-    # comments = tf.data.TextLineDataset(
-    #     os.path.join("data", "youtube_comment_samples.txt")
-    # )
-    # comments = comments.batch(mf.hparams.batch_size).map(_youtube_map)
+    comments = tf.data.TextLineDataset(
+        os.path.join("data", "youtube_comment_samples.txt")
+    )
+    comments = comments.batch(mf.hparams.batch_size).map(_youtube_map)
 
-    # youtube_comment_pairs = []
-    # for xs, xs_ids in comments:
-    #     ys = mf(xs_ids)
-    #     for x, y in zip(xs, ys):
-    #         youtube_comment_pairs.append([y, wordnet_score(x)])
+    youtube_comment_pairs = []
+    for xs, xs_ids in comments:
+        ys = mf(xs_ids)
+        for x, y in zip(xs, ys):
+            youtube_comment_pairs.append([y, wordnet_score(x)])
 
-    # plot_correlations(youtube_comment_pairs, "Youtube comment samples vs. wordnet")
+    plot_correlations(youtube_comment_pairs, "Youtube comment samples vs. wordnet")
 
     videos = tf.data.TextLineDataset(os.path.join("data", "youtube_video_samples.txt"))
 

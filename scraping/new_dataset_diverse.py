@@ -8,7 +8,7 @@ import pandas as pd
 import requests
 
 
-K = 100
+K = 1000
 
 API_KEY = None
 

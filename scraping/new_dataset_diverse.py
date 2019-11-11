@@ -50,7 +50,7 @@ CHANNEL_KEYS = (
 )
 
 
-def get_missing_comment_data(comments):
+def get_missing_comment_data(comments, ids_to_skip):
     """Missing keys:
 
     parent_comment_id
@@ -58,13 +58,11 @@ def get_missing_comment_data(comments):
     like_count
 
     """
+    ids = [c["id"] for c in comments]
     response = requests.get(
         "https://www.googleapis.com/youtube/v3/comments",
         params=dict(
-            id=",".join([c["id"] for c in comments]),
-            part="snippet",
-            key=API_KEY,
-            textFormat="plainText",
+            id=",".join(ids), part="snippet", key=API_KEY, textFormat="plainText"
         ),
     ).json()
 
@@ -93,10 +91,13 @@ def get_missing_comment_data(comments):
         print(c)
         result.append(c)
 
+    for id_ in ids:
+        writeskip(id_, ids_to_skip)
+
     return result
 
 
-def get_missing_video_data(videos):
+def get_missing_video_data(videos, ids_to_skip):
     """Missing keys:
 
     channel_id
@@ -105,10 +106,11 @@ def get_missing_video_data(videos):
     view_count
 
     """
+    ids = [v["id"] for v in videos]
     response = requests.get(
         "https://www.googleapis.com/youtube/v3/videos",
         params=dict(
-            id=",".join([v["id"] for v in videos]),
+            id=",".join(ids),
             part="snippet,statistics",
             key=API_KEY,
             textFormat="plainText",
@@ -137,6 +139,9 @@ def get_missing_video_data(videos):
 
         v["date_scraped"] = datetime.now().isoformat()
         result.append(v)
+
+    for id_ in ids:
+        writeskip(id_, ids_to_skip)
 
     return result
 
@@ -178,6 +183,14 @@ def writechid(chid, channels):
             f.write(chid + "\n")
 
 
+def writeskip(id_, ids_to_skip):
+    id_ = id_.strip()
+    if id_ not in ids_to_skip:
+        ids_to_skip[id_] = None
+        with open(os.path.join("data", "youtube_new", "ids_to_skip.txt"), "a") as f:
+            f.write(id_ + "\n")
+
+
 def repeat(it):
     while True:
         for el in it:
@@ -195,18 +208,25 @@ if __name__ == "__main__":
 
     path_orig = os.path.join(os.environ["DATASETS"], "youtube_right")
     path_new = os.path.join("data", "youtube_new")
-
-    written_ids = {}
-    if os.path.exists(path_new):
-        for filename in ["comments.csv", "videos.csv", "channels.csv"]:
-            filepath = os.path.join(path_new, filename)
-            if os.path.isfile(filepath):
-                with open(filepath) as f:
-                    for line in f:
-                        written_ids[line.split(",")[0]] = None
-
-    else:
+    if not os.path.exists(path_new):
         os.makedirs(path_new)
+
+    # Avoid re-scraping anything that we TRIED to scrape (even if API returned say 404)
+    ids_to_skip = {}
+
+    # Get all the ids to skip.
+    for filename in ["comments.csv", "videos.csv", "channels.csv"]:
+        filepath = os.path.join(path_new, filename)
+        if os.path.isfile(filepath):
+            with open(filepath) as f:
+                for line in f:
+                    ids_to_skip[line.split(",")[0]] = None
+
+    # Get all the ids to skip.
+    if os.path.isfile(os.path.join(path_new, "ids_to_skip.txt")):
+        with open(os.path.join(path_new, "ids_to_skip.txt")):
+            for line in f:
+                ids_to_skip[line.strip()] = None
 
     path_comments = os.path.join(path_new, "comments.csv")
     path_videos = os.path.join(path_new, "videos.csv")
@@ -245,7 +265,7 @@ if __name__ == "__main__":
                 continue  # skip csv header
             row = row[1]
 
-            if int(row["video"]) and row["video_id"] not in written_ids:
+            if int(row["video"]) and row["video_id"] not in ids_to_skip:
                 video = {
                     "id": row["video_id"],
                     "title": row["video_title"],
@@ -255,7 +275,7 @@ if __name__ == "__main__":
                 }
                 video_buf.append(video)
 
-            elif row["index"] not in written_ids:
+            elif row["index"] not in ids_to_skip:
                 comment = {
                     "id": row["index"],
                     "video_id": row["video_id"],
@@ -265,22 +285,20 @@ if __name__ == "__main__":
                 comment_buf.append(comment)
 
             if len(video_buf) == BUFSIZE:
-                video_buf = get_missing_video_data(video_buf)
+                video_buf = get_missing_video_data(video_buf, ids_to_skip)
                 print(f"  retrieved {len(video_buf)} videos")
                 for video in video_buf:
                     writechid(video["channel_id"], channels)
                     writerow(video, VIDEO_KEYS, path_videos)
-                    written_ids[video["id"]] = None
                     count += 1
                 video_buf = []
 
             if len(comment_buf) == BUFSIZE:
-                comment_buf = get_missing_comment_data(comment_buf)
+                comment_buf = get_missing_comment_data(comment_buf, ids_to_skip)
                 print(f"  retrieved {len(comment_buf)} comments")
                 for comment in comment_buf:
                     writechid(comment["op_channel_id"], channels)
                     writerow(comment, COMMENT_KEYS, path_comments)
-                    written_ids[comment["id"]] = None
                     count += 1
                 comment_buf = []
 
@@ -293,18 +311,16 @@ if __name__ == "__main__":
 
         # Write remainders in buffer.
         if len(video_buf) > 0:
-            video_buf = get_missing_video_data(video_buf)
+            video_buf = get_missing_video_data(video_buf, ids_to_skip)
             for video in video_buf:
                 writechid(video["channel_id"], channels)
                 writerow(video, VIDEO_KEYS, path_videos)
-                written_ids[video["id"]] = None
 
         if len(comment_buf) > 0:
-            comment_buf = get_missing_comment_data(comment_buf)
+            comment_buf = get_missing_comment_data(comment_buf, ids_to_skip)
             for comment in comment_buf:
                 writechid(comment["op_channel_id"], channels)
                 writerow(comment, COMMENT_KEYS, path_comments)
-                written_ids[comment["id"]] = None
 
     print("Successfully created videos.csv and comments.csv files.")
 

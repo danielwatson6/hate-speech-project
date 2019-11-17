@@ -224,7 +224,7 @@ if __name__ == "__main__":
 
     # Get all the ids to skip.
     if os.path.isfile(os.path.join(path_new, "ids_to_skip.txt")):
-        with open(os.path.join(path_new, "ids_to_skip.txt")):
+        with open(os.path.join(path_new, "ids_to_skip.txt")) as f:
             for line in f:
                 ids_to_skip[line.strip()] = None
 

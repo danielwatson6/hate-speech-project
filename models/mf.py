@@ -62,6 +62,7 @@ class MF(tfbp.Model):
         embeds = self.embed(x)
         return self.encoder(embeds)
 
+    @tfbp.runnable
     def fit(self, data_loader):
         # Loss function.
         if self.hparams.loss == "huber":
@@ -80,7 +81,8 @@ class MF(tfbp.Model):
         dataset = data_loader()
         n = self.hparams.num_valid // self.hparams.batch_size
         train_dataset = dataset.skip(n).shuffle(24771 - self.hparams.num_valid)
-        valid_dataset = iter(dataset.take(n).shuffle(self.hparams.num_valid).repeat())
+        valid_dataset_norepeat = dataset.take(n).shuffle(self.hparams.num_valid)
+        valid_dataset = iter(valid_dataset_norepeat.repeat())
 
         # TensorBoard writers.
         train_writer = tf.summary.create_file_writer(
@@ -136,7 +138,7 @@ class MF(tfbp.Model):
 
             print(f"Epoch {self.epoch.numpy()} finished")
             self.epoch.assign_add(1)
-            cos_score, mae_scores = self._evaluate(dataset)
+            cos_score, mae_scores = self._evaluate(valid_dataset_norepeat)
             with valid_writer.as_default():
                 tf.summary.scalar("eval_cosine_similarity", cos_score, step=step)
                 tf.summary.scalar(
@@ -172,5 +174,6 @@ class MF(tfbp.Model):
         print("non_moral\t", mae_scores[5], flush=True)
         return cos_score, mae_scores
 
+    @tfbp.runnable
     def evaluate(self, data_loader):
         self._evaluate(data_loader())

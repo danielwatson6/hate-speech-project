@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 import json
+import inspect
 import os
 import sys
 
@@ -41,10 +42,24 @@ if __name__ == "__main__":
 
         if len(sys.argv) >= 4 and not sys.argv[3].startswith("--"):
             classes["data_loader"] = sys.argv[3]
-            parser.add_argument("data_loader", type=str)
 
         Model = getcls("models." + classes["model"])
-        DataLoader = getcls("data_loaders." + classes["data_loader"])
+        try:
+            DataLoader = getcls("data_loaders." + classes["data_loader"])
+            parser.add_argument("data_loader", type=str)
+        except ModuleNotFoundError:
+            if len(sys.argv) >= 5 and not sys.argv[4].startswith("--"):
+                print(
+                    "Warning: model saved at",
+                    os.path.join("experiments", sys.argv[2]),
+                    f"already points to `models.{classes['model']}`, ignoring...",
+                )
+                classes["data_loader"] = sys.argv[4]
+                DataLoader = getcls("data_loaders." + classes["data_loader"])
+                parser.add_argument("model", type=str)
+                parser.add_argument("data_loader", type=str)
+            else:
+                raise
 
     else:
         Model = getcls("models." + sys.argv[3])
@@ -60,9 +75,18 @@ if __name__ == "__main__":
             json.dump({"model": sys.argv[3], "data_loader": sys.argv[4]}, f)
 
     args = {}
+    saved_hparams = {}
+    hparams_json_path = os.path.join("experiments", sys.argv[2], "hparams.json")
+    if os.path.exists(hparams_json_path):
+        with open(hparams_json_path) as f:
+            saved_hparams = json.load(f)
     for name, value in Model.default_hparams.items():
+        if name in saved_hparams:
+            value = saved_hparams[name]
         args[name] = value
     for name, value in DataLoader.default_hparams.items():
+        if name in saved_hparams:
+            value = saved_hparams[name]
         args[name] = value
 
     for name, value in args.items():
@@ -95,4 +119,10 @@ if __name__ == "__main__":
         with open(os.path.join("experiments", FLAGS.save_dir, "runpy.json"), "w") as f:
             json.dump({"model": FLAGS.model, "data_loader": FLAGS.data_loader}, f)
 
-    getattr(model, FLAGS.method)(data_loader)
+    if FLAGS.method not in Model._methods:
+        methods_str = "\n  ".join(Model._methods.keys())
+        raise ValueError(
+            f"Model does not have a runnable method `{FLAGS.method}`. Methods available:"
+            f"\n  {methods_str}"
+        )
+    Model._methods[FLAGS.method](model, data_loader)

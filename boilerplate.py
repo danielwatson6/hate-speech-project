@@ -22,6 +22,7 @@ def Hyperparameters(value):
 
 class Model(tf.keras.Model):
     default_hparams = {}
+    _methods = {}
 
     def __init__(self, save_dir=None, method=None, **hparams):
         super().__init__()
@@ -93,7 +94,16 @@ class DataLoader:
         raise NotImplementedError
 
 
-def default_export(x):
-    """Decorator to make a class or method the imported object of a module."""
-    sys.modules[x.__module__] = x
-    return x
+def runnable(f):
+    """Mark a method as runnable from `run.py`."""
+    setattr(f, "_runnable", True)
+    return f
+
+
+def default_export(cls):
+    """Make the class the imported object of the module and compile its runnables."""
+    sys.modules[cls.__module__] = cls
+    for name, method in cls.__dict__.items():
+        if "_runnable" in dir(method) and method._runnable:
+            cls._methods[name] = method
+    return cls

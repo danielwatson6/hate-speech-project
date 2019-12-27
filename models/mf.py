@@ -10,12 +10,18 @@ import boilerplate as tfbp
 import utils
 
 
+def half_sphere(x):
+    x_last = tf.math.sqrt(tf.reduce_sum(x ** 2, axis=1))
+    return tf.concat([x, x_last], 1)
+
+
 @tfbp.default_export
 class MF(tfbp.Model):
     default_hparams = {
         "batch_size": 32,
         "vocab_size": 25047,  # all vocabulary
         "fine_tune_embeds": True,
+        "normalize_nonmoral": False,
         "loss": "cosine_similarity",  # "huber" or "cosine_similarity"
         "optimizer": "sgd",  # "sgd" or "adam"
         "learning_rate": 0.1,
@@ -53,7 +59,14 @@ class MF(tfbp.Model):
         self.embed.trainable = self.hparams.fine_tune_embeds
 
         self.encoder = self.make_encoder()
-        self.encoder.add(tfkl.Dense(6, activation=tf.math.tanh))
+
+        # The "non-moral" axis is actually between 0 and 1, and only 1 when the rest of
+        # the components are 0.
+        if self.hparams.normalize_nonmoral:
+            self.encoder.add(tfkl.Dense(5, activation=tf.math.tanh))
+            self.encoder.add(tfkl.Lambda(half_sphere))
+        else:
+            self.encoder.add(tfkl.Dense(6, activation=tf.math.tanh))
 
     def make_encoder(self):
         raise NotImplementedError

@@ -1,4 +1,4 @@
-"""Moral foundations classifier."""
+"""Abstract moral foundations classifier."""
 
 import os
 
@@ -91,6 +91,7 @@ class MF(tfbp.Model):
             opt = tf.optimizers.SGD(self.hparams.learning_rate)
 
         # Train/validation split.
+        # TODO: move this logic to the data loader.
         dataset = data_loader()
         n = self.hparams.num_valid // self.hparams.batch_size
         train_dataset = dataset.skip(n).shuffle(24771 - self.hparams.num_valid)

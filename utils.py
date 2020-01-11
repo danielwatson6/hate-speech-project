@@ -8,6 +8,7 @@ import time
 import firebase_admin
 from firebase_admin import credentials, firestore
 from gensim.models import KeyedVectors
+import numpy as np
 import pandas as pd
 
 
@@ -35,10 +36,28 @@ def load_word2vec():
     if os.path.exists(path):
         w2v = KeyedVectors.load(path, mmap="r")
     else:
+        # TODO: fix this line.
         w2v = KeyedVectors.load_word2vec_format(os.path.join(), binary=True)
         w2v.init_sims(replace=True)
         w2v.save(path)
     return w2v
+
+
+def save_or_load_embeds(embeds_path, vocab_path, vocab_size):
+    if not os.path.isfile(embeds_path):
+        word2vec = load_word2vec()
+        embedding_matrix = np.random.uniform(low=-1.0, high=1.0, size=(vocab_size, 300))
+
+        with open(vocab_path) as f:
+            for i, word in enumerate(f):
+                word = word.strip()
+                if word in word2vec:
+                    embedding_matrix[i] = word2vec[word]
+
+        np.save(embeds_path, embedding_matrix)
+        return embedding_matrix
+
+    return np.load(embeds_path)
 
 
 def stormfront_gen():
@@ -64,10 +83,8 @@ def twitter_gen():
         for line in f:
             line = line.split(",")
             tweet = ",".join(line[6:])
-            try:
+            with suppress(Exception):
                 yield tokenize(tweet), labels[int(line[5])]
-            except:  # catch the last line
-                ...
 
 
 def youtube_samples_gen():
@@ -96,7 +113,7 @@ def firebase(backup=False, verbose=True):
     return client
 
 
-def timeout_stream(collection_ref, sleep_time=60, verbose=True):
+def timeout_stream(collection_ref, sleep_time=1800, verbose=True):
     """Add a timeout handler for firebase collection streams."""
     stream = iter(cref.stream())
     with suppress(StopIteration):
@@ -109,7 +126,7 @@ def timeout_stream(collection_ref, sleep_time=60, verbose=True):
                 time.sleep(sleep_time)
 
 
-def timeout_do(method, doc_ref, args=None, sleep_time=60, verbose=True):
+def timeout_do(method, doc_ref, args=None, sleep_time=1800, verbose=True):
     """Add a timeout handler for an action on an individual firebase document."""
     try:
         method = getattr(doc_ref, method)

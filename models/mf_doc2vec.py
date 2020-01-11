@@ -1,4 +1,4 @@
-"""Moral foundations classifier."""
+"""Mean word embedding moral foundations classifier."""
 
 import os
 

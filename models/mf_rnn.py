@@ -1,4 +1,4 @@
-"""Moral foundations classifier."""
+"""RNN-based moral foundations classifier."""
 
 import os
 

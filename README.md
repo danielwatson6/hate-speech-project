@@ -8,14 +8,13 @@ This repository requires python 3.7.3, pip and virtualenv. Setup a virtual envir
 virtualenv env
 source env.sh
 pip install -r requirements.txt
-pip install tensorflow==2.0.0-beta1  # or `pip install tensorflow-gpu==2.0.0-beta1`
 ```
 
 ## Workflow
 
 ### Python
 
-Whenever working with python, run `source env.sh` in the current terminal session. If new packages are installed, update the list of dependencies by running `pip freeze > requirements.txt`. Make sure to not add `tensorflow` to the list.
+Whenever working with python, run `source env.sh` in the current terminal session. If new packages are installed, update the list of dependencies by running `pip freeze > requirements.txt`.
 
 Scripts in subdirectories (e.g. those in `scraping`) should be run as modules to avoid path and module conflicts:
 

@@ -1,4 +1,4 @@
-"""Language model."""
+"""Abstract moral foundations classifier."""
 
 import os
 
@@ -10,13 +10,22 @@ import boilerplate as tfbp
 import utils
 
 
+def half_sphere(x):
+    x_last = tf.math.sqrt(tf.reduce_sum(x ** 2, axis=1))
+    return tf.concat([x, x_last], 1)
+
+
 @tfbp.default_export
-class LM(tfbp.Model):
+class MF(tfbp.Model):
     default_hparams = {
         "batch_size": 32,
-        "vocab_size": 25047,  # all vocabulary
+        "vocab_size": 25047,  # TODO: get rid of this, use `TextVectorization`.
         "fine_tune_embeds": True,
-        "learning_rate": 1e-3,
+        "normalize_nonmoral": False,
+        "loss": "cosine_similarity",  # "huber" or "cosine_similarity"
+        "optimizer": "sgd",  # "sgd" or "adam"
+        "learning_rate": 0.1,
+        "num_valid": 5047,  # TODO: move this to the data loader.
         "epochs": 10,
     }
 
@@ -24,10 +33,27 @@ class LM(tfbp.Model):
         super().__init__(*args, **kwargs)
         self.step = tf.Variable(0, trainable=False)
         self.epoch = tf.Variable(0, trainable=False)
-        embeds_path = os.path.join("data", "twitter_mf.clean.npy")
-        embeds_path = os.path.join("data", "twitter_mf.clean.vocab")
-        embedding_matrix = utils.save_or_load_embeds(embeds_path, vocab_path)
 
+        # TODO: get rid of this, use `TextVectorization`.
+        embeds_path = os.path.join("data", "twitter_mf.clean.npy")
+        if not os.path.isfile(embeds_path):
+            word2vec = utils.load_word2vec()
+            embedding_matrix = np.random.uniform(
+                low=-1.0, high=1.0, size=(self.hparams.vocab_size, 300)
+            )
+            with open(os.path.join("data", "twitter_mf.clean.vocab")) as f:
+                for i, word in enumerate(f):
+                    word = word.strip()
+                    if word in word2vec:
+                        embedding_matrix[i] = word2vec[word]
+            np.save(embeds_path, embedding_matrix)
+            del word2vec
+
+        else:
+            embedding_matrix = np.load(embeds_path)
+
+        # TODO: get rid of this, use `TextVectorization` and figure out how to
+        # equivalently incorporate `fine_tune_embeds` .
         self.embed = tfkl.Embedding(
             self.hparams.vocab_size,
             300,
@@ -54,9 +80,21 @@ class LM(tfbp.Model):
 
     @tfbp.runnable
     def fit(self, data_loader):
-        opt = tf.optimizers.Adam(self.hparams.learning_rate)
+        # Loss function.
+        if self.hparams.loss == "huber":
+            _loss_fn = tf.losses.Huber()
+        else:
+            _loss_fn = tf.losses.CosineSimilarity()
+        loss_fn = lambda yt, yp: tf.reduce_mean(_loss_fn(yt, yp))
+
+        # Optimizer.
+        if self.hparams.optimizer == "adam":
+            opt = tf.optimizers.Adam(self.hparams.learning_rate)
+        else:
+            opt = tf.optimizers.SGD(self.hparams.learning_rate)
 
         # Train/validation split.
+        # TODO: move this logic to the data loader.
         dataset = data_loader()
         n = self.hparams.num_valid // self.hparams.batch_size
         train_dataset = dataset.skip(n).shuffle(24771 - self.hparams.num_valid)
@@ -117,10 +155,41 @@ class LM(tfbp.Model):
 
             print(f"Epoch {self.epoch.numpy()} finished")
             self.epoch.assign_add(1)
-            self.save()
+            cos_score, mae_scores = self._evaluate(valid_dataset_norepeat)
+            with valid_writer.as_default():
+                tf.summary.scalar("eval_cosine_similarity", cos_score, step=step)
+                tf.summary.scalar(
+                    "eval_mean_absolute_error", tf.reduce_mean(mae_scores), step=step
+                )
+                tf.summary.histogram(
+                    "eval_mean_absolute_error_per_component", mae_scores, step=step
+                )
+
+            if cos_score > max_eval_score:
+                self.save()
 
     def _evaluate(self, dataset):
-        ...
+        valid_dataset = dataset.take(self.hparams.num_valid // self.hparams.batch_size)
+        cos_sim = tf.losses.CosineSimilarity(reduction=tf.losses.Reduction.NONE)
+        mae = lambda x, y: tf.math.abs(x - y)
+        all_cos_sim = []
+        all_mae = []
+        for x, y in valid_dataset:
+            y_pred = self(x)
+            for a, b in zip(cos_sim(y, y_pred), mae(y, y_pred)):
+                all_cos_sim.append(a)
+                all_mae.append(b)
+
+        cos_score = tf.reduce_mean(all_cos_sim).numpy()
+        mae_scores = tf.reduce_mean(all_mae, axis=0).numpy()
+        print("cos\t", cos_score)
+        print("authority\t", mae_scores[0])
+        print("fairness\t", mae_scores[1])
+        print("care\t", mae_scores[2])
+        print("loyalty\t", mae_scores[3])
+        print("purity\t", mae_scores[4])
+        print("non_moral\t", mae_scores[5], flush=True)
+        return cos_score, mae_scores
 
     @tfbp.runnable
     def evaluate(self, data_loader):

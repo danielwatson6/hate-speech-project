@@ -7,7 +7,7 @@ import tensorflow as tf
 import tensorflow.keras.layers as tfkl
 
 import boilerplate as tfbp
-from models import mf as MoralFoundations
+from models import moral_foundations
 import utils
 
 
@@ -17,9 +17,9 @@ def mish(x):
 
 
 @tfbp.default_export
-class MF_Doc2Vec(MoralFoundations):
+class MF_Doc2Vec(moral_foundations):
     default_hparams = {
-        **MoralFoundations.default_hparams,
+        **moral_foundations.default_hparams,
         "reduction": "mean",
         "hidden_sizes": [512],
         "dropout": 0.0,

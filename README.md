@@ -28,7 +28,7 @@ The TensorFlow workflow in this repository is adapted from [this boilerplate](ht
 
 #### Model visualization
 
-During and after training, the training and validation losses are plotted in TensorBoard. To visualize, run `tensorboard --logdir=model_files` and open [localhost:6006](localhost:6006) in the browser.
+During and after training, the training and validation losses are plotted in TensorBoard. To visualize, run `tensorboard --logdir=experiments` and open [localhost:6006](localhost:6006) in the browser.
 
 #### Embedding visualization
 

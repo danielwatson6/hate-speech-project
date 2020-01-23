@@ -7,14 +7,14 @@ import tensorflow as tf
 import tensorflow.keras.layers as tfkl
 
 import boilerplate as tfbp
-from models import mf as MoralFoundations
+from models import moral_foundations
 import utils
 
 
 @tfbp.default_export
-class MF_RNN(MoralFoundations):
+class MF_RNN(moral_foundations):
     default_hparams = {
-        **MoralFoundations.default_hparams,
+        **moral_foundations.default_hparams,
         "rnn_layers": 2,
         "hidden_size": 512,
         "dropout": 0.0,

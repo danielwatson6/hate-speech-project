@@ -1,17 +1,11 @@
+"""Generic script to run any method in a TensorFlow model."""
+
 from argparse import ArgumentParser
 import json
-import inspect
 import os
 import sys
 
-import tensorflow as tf
-
-import boilerplate
-
-
-def getcls(module_str):
-    head, tail = module_str.split(".")
-    return getattr(__import__(f"{head}.{tail}"), tail)
+import boilerplate as tfbp
 
 
 if __name__ == "__main__":
@@ -24,46 +18,55 @@ if __name__ == "__main__":
         )
         exit(1)
 
+    # Avoid errors due to a missing `experiments` directory.
+    if not os.path.exists("experiments"):
+        os.makedirs("experiments")
+
+    # Dynamically parse arguments from the command line depending on the model and data
+    # loader provided. The `method` and `save_dir` arguments are always required.
     parser = ArgumentParser()
     parser.add_argument("method", type=str)
     parser.add_argument("save_dir", type=str)
 
-    if not os.path.exists("experiments"):
-        os.makedirs("experiments")
+    # If modules.json exists, the model and the data loader modules can be inferred from
+    # `save_dir`, and the data loader can be optionally changed from its default.
+    #
+    # Note that we need to use `sys` because we need to read the command line args to
+    # determine what to parse with argparse.
+    modules_json_path = os.path.join("experiments", sys.argv[2], "modules.json")
+    if os.path.exists(modules_json_path):
 
-    # If runpy.json exists, the model and the data loader classes can be inferred and
-    # the data loader can be optionally switched. These need to be loaded to get the
-    # static default hyperparameters to be read by argparse.
-    runpy_json_path = os.path.join("experiments", sys.argv[2], "runpy.json")
-    if os.path.exists(runpy_json_path):
-
-        with open(runpy_json_path) as f:
+        with open(modules_json_path) as f:
             classes = json.load(f)
 
         if len(sys.argv) >= 4 and not sys.argv[3].startswith("--"):
             classes["data_loader"] = sys.argv[3]
 
-        Model = getcls("models." + classes["model"])
+        Model = tfbp.get_model(classes["model"])
+
+        # The model shouldn't be provided for an existing run, but for convenience this
+        # error is handled for the user.
         try:
-            DataLoader = getcls("data_loaders." + classes["data_loader"])
+            DataLoader = tfbp.get_data_loader(classes["data_loader"])
             parser.add_argument("data_loader", type=str)
         except ModuleNotFoundError:
-            if len(sys.argv) >= 5 and not sys.argv[4].startswith("--"):
-                print(
-                    "Warning: model saved at",
-                    os.path.join("experiments", sys.argv[2]),
-                    f"already points to `models.{classes['model']}`, ignoring...",
-                )
-                classes["data_loader"] = sys.argv[4]
-                DataLoader = getcls("data_loaders." + classes["data_loader"])
-                parser.add_argument("model", type=str)
-                parser.add_argument("data_loader", type=str)
-            else:
+            if len(sys.argv) < 5 or sys.argv[4].startswith("--"):
                 raise
 
+            # TODO: set up proper logging as part of the boilerplate.
+            print(
+                "Warning: model saved at",
+                os.path.join("experiments", sys.argv[2]),
+                f"already points to `models.{classes['model']}`, ignoring...",
+            )
+            classes["data_loader"] = sys.argv[4]
+            DataLoader = tfbp.get_data_loader(classes["data_loader"])
+            parser.add_argument("model", type=str)
+            parser.add_argument("data_loader", type=str)
+
     else:
-        Model = getcls("models." + sys.argv[3])
-        DataLoader = getcls("data_loaders." + sys.argv[4])
+        Model = tfbp.get_model(sys.argv[3])
+        DataLoader = tfbp.get_data_loader(sys.argv[4])
 
         parser.add_argument("model", type=str)
         parser.add_argument("data_loader", type=str)
@@ -71,8 +74,13 @@ if __name__ == "__main__":
         if not os.path.exists(os.path.join("experiments", sys.argv[2])):
             os.makedirs(os.path.join("experiments", sys.argv[2]))
 
-        with open(runpy_json_path, "w") as f:
-            json.dump({"model": sys.argv[3], "data_loader": sys.argv[4]}, f)
+        with open(modules_json_path, "w") as f:
+            json.dump(
+                {"model": sys.argv[3], "data_loader": sys.argv[4]},
+                f,
+                indent=4,
+                sort_keys=True,
+            )
 
     args = {}
     saved_hparams = {}
@@ -89,7 +97,9 @@ if __name__ == "__main__":
             value = saved_hparams[name]
         args[name] = value
 
+    # Add a keyword argument to the argument parser for each hyperparameter.
     for name, value in args.items():
+        # Make sure to correctly parse hyperparameters whose values are lists/tuples.
         if type(value) in [list, tuple]:
             if not len(value):
                 raise ValueError(
@@ -102,23 +112,24 @@ if __name__ == "__main__":
         else:
             parser.add_argument(f"--{name}", type=type(value), default=value)
 
+    # Collect parsed hyperparameters.
     FLAGS = parser.parse_args()
     kwargs = {k: v for k, v in FLAGS._get_kwargs()}
-
     for k in ["model", "save_dir", "data_loader"]:
         if k in kwargs:
             del kwargs[k]
 
+    # Instantiate model and data loader.
     model = Model(os.path.join("experiments", FLAGS.save_dir), **kwargs)
     data_loader = DataLoader(**kwargs)
 
-    try:
+    # Restore the model's weights, or save them for a new run.
+    if os.path.isfile(os.path.join(model.save_dir), "checkpoint"):
         model.restore()
-    except Exception:
+    else:
         model.save()
-        with open(os.path.join("experiments", FLAGS.save_dir, "runpy.json"), "w") as f:
-            json.dump({"model": FLAGS.model, "data_loader": FLAGS.data_loader}, f)
 
+    # Run the specified model method.
     if FLAGS.method not in Model._methods:
         methods_str = "\n  ".join(Model._methods.keys())
         raise ValueError(

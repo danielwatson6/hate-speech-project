@@ -1,3 +1,5 @@
+"""TensorFlow Boilerplate main module."""
+
 from collections import namedtuple
 import json
 import os
@@ -7,7 +9,13 @@ import tensorflow as tf
 
 
 def Hyperparameters(value):
-    # Don't transform the value if it's a namedtuple.
+    """Turn a dict of hyperparameters into a nameduple.
+
+    This method will also check if `value` is a namedtuple, and if so, will return it
+    unchanged.
+
+    """
+    # Don't transform `value` if it's a namedtuple.
     # https://stackoverflow.com/questions/2166818/how-to-check-if-an-object-is-an-instance-of-a-namedtuple
     t = type(value)
     b = t.__bases__
@@ -21,6 +29,8 @@ def Hyperparameters(value):
 
 
 class Model(tf.keras.Model):
+    """Keras model with hyperparameter parsing and a few other utilities."""
+
     default_hparams = {}
     _methods = {}
 
@@ -31,6 +41,9 @@ class Model(tf.keras.Model):
         self.hparams = {**self.default_hparams, **hparams}
         self._ckpt = None
 
+        # If the model's hyperparameters were saved, the saved values will be used as
+        # the default, but they will be overriden by hyperparameters passed to the
+        # constructor as keyword args.
         hparams_path = os.path.join(save_dir, "hparams.json")
         if os.path.isfile(hparams_path):
             with open(hparams_path) as f:
@@ -69,6 +82,8 @@ class Model(tf.keras.Model):
 
 
 class DataLoader:
+    """Data loader class akin to `Model`."""
+
     default_hparams = {}
 
     def __init__(self, method=None, **hparams):
@@ -107,3 +122,13 @@ def default_export(cls):
         if "_runnable" in dir(method) and method._runnable:
             cls._methods[name] = method
     return cls
+
+
+def get_model(module_str):
+    """Import the model in the given module string."""
+    return getattr(__import__(f"models.{module_str}"), module_str)
+
+
+def get_data_loader(module_str):
+    """Import the data loader in the given module string."""
+    return getattr(__import__(f"data_loaders.{module_str}"), module_str)

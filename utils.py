@@ -44,23 +44,6 @@ def load_word2vec():
     return w2v
 
 
-def save_or_load_embeds(embeds_path, vocab_path, vocab_size):
-    if not os.path.isfile(embeds_path):
-        word2vec = load_word2vec()
-        embedding_matrix = np.random.uniform(low=-1.0, high=1.0, size=(vocab_size, 300))
-
-        with open(vocab_path) as f:
-            for i, word in enumerate(f):
-                word = word.strip()
-                if word in word2vec:
-                    embedding_matrix[i] = word2vec[word]
-
-        np.save(embeds_path, embedding_matrix)
-        return embedding_matrix
-
-    return np.load(embeds_path)
-
-
 def stormfront_gen():
     """Generator for the stormfront dataset."""
     labels = {"noHate": 0, "hate": 1}

@@ -71,14 +71,21 @@ class Model(tf.keras.Model):
         return self._save_dir
 
     def save(self):
+        """Save the model's weights."""
         if self._ckpt is None:
+            # TODO: use a checkpoint manager to only keep the latest weights.
             self._ckpt = tf.train.Checkpoint(model=self)
         self._ckpt.save(file_prefix=os.path.join(self.save_dir, "model"))
 
     def restore(self):
+        """Restore the model's latest saved weights."""
         if self._ckpt is None:
             self._ckpt = tf.train.Checkpoint(model=self)
         self._ckpt.restore(tf.train.latest_checkpoint(self.save_dir))
+
+    def make_summary_writer(self, dirname):
+        """Create a TensorBoard summary writer."""
+        return tf.summary.create_file_writer(os.path.join(self.save_dir, dirname))
 
 
 class DataLoader:

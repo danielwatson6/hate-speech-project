@@ -11,12 +11,11 @@ if __name__ == "__main__":
 
     for corpus, extension in [("2", "tokens"), ("103-raw", "raw")]:
         for partition in ["train", "valid", "test"]:
-            root = os.path.join("data", f"wikitext-{corpus}")
             print(f"wikitext-{corpus} ({partition})\n  cleaning data...")
 
+            root = os.path.join("data", f"wikitext-{corpus}")
             rf = open(os.path.join(root, f"wiki.{partition}.{extension}"))
-            wf_inputs = open(os.path.join(root, f"wiki.{partition}.inputs"), "w")
-            wf_labels = open(os.path.join(root, f"wiki.{partition}.labels"), "w")
+            wf = open(os.path.join(root, f"wiki.{partition}.clean"), "w")
 
             counts = None
             if partition == "train":
@@ -24,17 +23,20 @@ if __name__ == "__main__":
 
             for line in rf:
                 # Ignore wikipedia headers.
-                line = line.lower().strip()
-                if line == "" or line.startswith(" ="):
+                line = line.strip()
+                if line == "" or line.startswith("="):
                     continue
 
+                # Change numbers, possibly with commas or decimal points, to `<num>`.
                 line = re.sub(r"[0-9]+", " <num> ", line)
                 line = re.sub(r"<num> @.@", " ", line)
                 line = re.sub(r"<num>(?: <num>)+", " <num> ", line)
-                line = re.sub(r"[^a-z<>'\.,;:]", " ", line)
+
+                # Remove any other weird characters.
+                line = re.sub(r"[^A-Za-z<>'\.,;:]", " ", line)
                 line = shrink_spaces(line)
 
-                # Segment into sentences / independent clauses by tokenised '.', ';'.
+                # Segment into sentences / independent clauses by tokenized '.', ';'.
                 lines = []
                 line_buf = []
                 for token in line.split():
@@ -53,15 +55,12 @@ if __name__ == "__main__":
                         counts[token] += 1
 
                 for line in lines:
-                    no_punctuation = re.sub(r"[^A-Za-z<>]", " ", line)
-                    no_punctuation = shrink_spaces(no_punctuation)
-                    wf_inputs.write(no_punctuation + "\n")
-                    wf_labels.write(line + "\n")
+                    wf.write(line + "\n")
 
             # Write tokens sorted by frequency.
             if partition == "train":
                 print("  sorting vocabulary...")
-                with open(os.path.join(root, f"wiki.vocab.tsv"), "w") as wf_voc:
+                with open(os.path.join(root, f"wiki.vocab"), "w") as wf_voc:
 
                     # Special tokens first!
                     unk_count = counts["<unk>"]
@@ -75,5 +74,4 @@ if __name__ == "__main__":
                         wf_voc.write(f"{token}\t{count}\n")
 
             rf.close()
-            wf_inputs.close()
-            wf_labels.close()
+            wf.close()

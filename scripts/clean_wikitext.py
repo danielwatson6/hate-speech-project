@@ -37,25 +37,20 @@ if __name__ == "__main__":
                 line = shrink_spaces(line)
 
                 # Segment into sentences / independent clauses by tokenized '.', ';'.
-                lines = []
                 line_buf = []
                 for token in line.split():
+                    line_buf.append(token)
 
                     # Check for end of "sentence".
                     if token in [".", ";"]:
-                        line_buf.append(token)
-                        lines.append(" ".join(line_buf))
+                        wf.write(" ".join(line_buf) + "\n")
                         line_buf = []
-                    else:
-                        line_buf.append(token)
 
                     if partition == "train":
-                        if token not in counts:
-                            counts[token] = 0
                         counts[token] += 1
 
-                for line in lines:
-                    wf.write(line + "\n")
+            rf.close()
+            wf.close()
 
             # Write tokens sorted by frequency.
             if partition == "train":
@@ -72,6 +67,3 @@ if __name__ == "__main__":
 
                     for token, count in counts.most_common():
                         wf_voc.write(f"{token}\t{count}\n")
-
-            rf.close()
-            wf.close()

@@ -36,10 +36,11 @@ def load_word2vec():
     if os.path.exists(path):
         w2v = KeyedVectors.load(path, mmap="r")
     else:
-        # TODO: fix this line.
-        w2v = KeyedVectors.load_word2vec_format(os.path.join(), binary=True)
+        orig_w2v_path = os.path.join("data", "GoogleNews-vectors-negative300.bin.gz")
+        w2v = KeyedVectors.load_word2vec_format(orig_w2v_path, binary=True)
         w2v.init_sims(replace=True)
         w2v.save(path)
+        os.remove(orig_w2v_path)
     return w2v
 
 

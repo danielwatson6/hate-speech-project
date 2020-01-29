@@ -101,11 +101,16 @@ class LM(tfbp.Model):
 
     @tfbp.runnable
     def ambiguity(self, data_loader):
-        # TODO: implement this. Iterate over all the batches in the data loader, and
-        # print the ambiguity score per example for each word. From the softmax outputs
-        # [prob_word1, ..., prob_wordV], this can be computed as
-        # - prob_word1 log prob_word1 - ... - prob_wordV log prob_wordV
-        ...
+        for x in data_loader:
+            probs = self(x)
+            # nlog_probs = -tf.math.log(probs + 1e-8)
+            nlog_probs = -tf.math.log(probs)
+            nplogp = probs * nlog_probs
+            reduced_sum = tf.reduce_sum(nplogp, axis=2)
+            reduced_sum = np.array(reduced_sum)
+            # for loop to iterate and test
+            for sentence in reduced_sum:
+                print(", ".join([str(word) for word in sentence]))
 
     def _evaluate(self, dataset):
         # TODO: research and implement a standard benchmark used to evaluate language

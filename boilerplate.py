@@ -40,6 +40,7 @@ class Model(tf.keras.Model):
         self._method = method
         self.hparams = {**self.default_hparams, **hparams}
         self._ckpt = None
+        self._mananger = None
 
         # If the model's hyperparameters were saved, the saved values will be used as
         # the default, but they will be overriden by hyperparameters passed to the
@@ -73,15 +74,16 @@ class Model(tf.keras.Model):
     def save(self):
         """Save the model's weights."""
         if self._ckpt is None:
-            # TODO: use a checkpoint manager to only keep the latest weights.
             self._ckpt = tf.train.Checkpoint(model=self)
-        self._ckpt.save(file_prefix=os.path.join(self.save_dir, "model"))
+            self._manager = tf.train.CheckpointManager(self._ckpt, directory=self.save_dir, max_to_keep=1)
+        self._manager.save()
 
     def restore(self):
         """Restore the model's latest saved weights."""
         if self._ckpt is None:
             self._ckpt = tf.train.Checkpoint(model=self)
-        self._ckpt.restore(tf.train.latest_checkpoint(self.save_dir))
+            self._manager = tf.train.CheckpointManager(self._ckpt, directory=self.save_dir, max_to_keep=1)
+        self._ckpt.restore(self._manager.latest_checkpoint)
 
     def make_summary_writer(self, dirname):
         """Create a TensorBoard summary writer."""

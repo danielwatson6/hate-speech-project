@@ -75,14 +75,18 @@ class Model(tf.keras.Model):
         """Save the model's weights."""
         if self._ckpt is None:
             self._ckpt = tf.train.Checkpoint(model=self)
-            self._manager = tf.train.CheckpointManager(self._ckpt, directory=self.save_dir, max_to_keep=1)
+            self._manager = tf.train.CheckpointManager(
+                self._ckpt, directory=self.save_dir, max_to_keep=1
+            )
         self._manager.save()
 
     def restore(self):
         """Restore the model's latest saved weights."""
         if self._ckpt is None:
             self._ckpt = tf.train.Checkpoint(model=self)
-            self._manager = tf.train.CheckpointManager(self._ckpt, directory=self.save_dir, max_to_keep=1)
+            self._manager = tf.train.CheckpointManager(
+                self._ckpt, directory=self.save_dir, max_to_keep=1
+            )
         self._ckpt.restore(self._manager.latest_checkpoint)
 
     def make_summary_writer(self, dirname):

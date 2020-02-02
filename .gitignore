@@ -4,6 +4,7 @@ env/
 experiments
 projector/
 secrets/
+.vscode/
 
 # Python
 *.py[cod]

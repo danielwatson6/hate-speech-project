@@ -16,7 +16,8 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 comments_ref = db.collection(u"comments")
-docs = users_ref.stream()
+docs = comments_ref.stream()
 
 for doc in docs:
     print(u"{} => {}".format(doc.id, doc.to_dict()))
+    print()

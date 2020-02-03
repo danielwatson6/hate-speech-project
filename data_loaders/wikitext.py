@@ -25,7 +25,7 @@ class WikiText(tfbp.DataLoader):
             raise ValueError("`corpus` hyperparameter can only attain values 2 or 103.")
 
         vocab_path = os.path.join(data_path, "wiki.vocab")
-        embeds_path = os.path.join(data_path, "wiki.vocab")
+        embeds_path = os.path.join(data_path, "wiki.npy")
 
         # Used by models to display outputs as strings; the conversion is data-dependent.
         self.word_to_id, self.id_to_word = utils.make_word_id_maps(

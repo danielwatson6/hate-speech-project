@@ -113,11 +113,10 @@ class LM(tfbp.Model):
             # nlog_probs = -tf.math.log(probs + 1e-8)
             nlog_probs = -tf.math.log(probs)
             nplogp = probs * nlog_probs
-            reduced_sum = tf.reduce_sum(nplogp, axis=2)
-            reduced_sum = np.array(reduced_sum)
+            entropy = tf.reduce_sum(nplogp, axis=2).numpy()
             # for loop to iterate and test
-            for sentence in reduced_sum:
-                print(", ".join([str(word) for word in sentence]))
+            for sequence in entropy:
+                print(", ".join(["{:.4f}".format(y) for y in sequence]))
 
     def _evaluate(self, dataset):
         # TODO: research and implement a standard benchmark used to evaluate language

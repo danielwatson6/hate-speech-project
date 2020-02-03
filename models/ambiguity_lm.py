@@ -47,15 +47,22 @@ class LM(tfbp.Model):
 
         self.forward.add(tfkl.Dense(self.hparams.vocab_size), activation=tf.nn.softmax)
 
-        self.cross_entropy = tf.losses.SparseCategoricalCrossentropy()
+        self.cross_entropy = tf.losses.SparseCategoricalCrossentropy(
+            reduction=tf.keras.losses.Reduction.NONE
+        )
 
     def call(self, x):
         return self.forward(self.embed(x))
 
     def loss(self, x):
+        inputs = x[:-1]
+        labels = x[1:]
         probs = self(x[:-1])
-        # TODO: mask the loss.
-        return self.cross_entropy(x[1:], probs)
+        # Avoid punishing the model for "wrong" guesses on padded data.
+        mask = tf.cast(tf.not_equal(labels, 0), tf.float32)
+        mask = tf.tile(tf.expand_dims(mask, -1), [1, 1, self.hparams.vocab_size])
+        masked_loss = self.cross_entropy(labels, probs) * mask
+        return tf.reduce_mean(masked_loss)
 
     @tfbp.runnable
     def fit(self, data_loader):
@@ -106,11 +113,10 @@ class LM(tfbp.Model):
             # nlog_probs = -tf.math.log(probs + 1e-8)
             nlog_probs = -tf.math.log(probs)
             nplogp = probs * nlog_probs
-            reduced_sum = tf.reduce_sum(nplogp, axis=2)
-            reduced_sum = np.array(reduced_sum)
+            entropy = tf.reduce_sum(nplogp, axis=2).numpy()
             # for loop to iterate and test
-            for sentence in reduced_sum:
-                print(", ".join([str(word) for word in sentence]))
+            for sequence in entropy:
+                print(", ".join(["{:.4f}".format(y) for y in sequence]))
 
     def _evaluate(self, dataset):
         # TODO: research and implement a standard benchmark used to evaluate language

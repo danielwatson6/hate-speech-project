@@ -15,17 +15,18 @@ class WikiText(tfbp.DataLoader):
         "punctuation": True,
         "lowercase": True,
     }
-
-    def call(self):
+    
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
         if self.hparams.corpus == 103:
-            data_path = os.path.join("data", "wikitext-103-raw")
+            self._data_path = os.path.join("data", "wikitext-103-raw")
         elif self.hparams.corpus == 2:
-            data_path = os.path.join("data", "wikitext-2")
+            self._data_path = os.path.join("data", "wikitext-2")
         else:
             raise ValueError("`corpus` hyperparameter can only attain values 2 or 103.")
 
-        vocab_path = os.path.join(data_path, "wiki.vocab")
-        embeds_path = os.path.join(data_path, "wiki.npy")
+        vocab_path = os.path.join(self._data_path, "wiki.vocab")
+        embeds_path = os.path.join(self._data_path, "wiki.npy")
 
         # Used by models to display outputs as strings; the conversion is data-dependent.
         self.word_to_id, self.id_to_word = utils.make_word_id_maps(
@@ -38,17 +39,15 @@ class WikiText(tfbp.DataLoader):
             embeds_path, vocab_path, self.hparams.vocab_size
         )
 
+
+    def call(self):
         if self.method == "fit":
-            train_dataset = self._make_dataset(
-                os.path.join(data_path, "wiki.train.clean"), shuffle=10000
-            )
-            valid_dataset = self._make_dataset(
-                os.path.join(data_path, "wiki.valid.clean"), shuffle=10000
-            )
+            train_dataset = self._make_dataset("wiki.train.clean", shuffle=10000)
+            valid_dataset = self._make_dataset("wiki.valid.clean", shuffle=10000)
             return train_dataset, valid_dataset
 
         elif self.method == "evaluate":
-            return self._make_dataset(os.path.join(data_path, "wiki.test.clean"))
+            return self._make_dataset("wiki.test.clean")
 
         elif self.method == "interact":
 
@@ -73,8 +72,8 @@ class WikiText(tfbp.DataLoader):
             padded = padded[:, : self.hparams.max_seq_len]
         return self.word_to_id(padded)
 
-    def _make_dataset(self, path, shuffle=None):
-        dataset = tf.data.TextLineDataset(path)
+    def _make_dataset(self, filename, shuffle=None):
+        dataset = tf.data.TextLineDataset(os.path.join(self._data_path, filename))
 
         if shuffle:
             dataset = dataset.shuffle(shuffle)

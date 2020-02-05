@@ -31,7 +31,7 @@ class LM(tfbp.Model):
         self.embed = tfkl.Embedding(self.hparams.vocab_size, 300)
         self.embed.trainable = self.hparams.fine_tune_embeds
 
-        self.forward = tfkl.Sequential()
+        self.forward = tf.keras.Sequential()
 
         if self.hparams.use_lstm:
             RNN = tfkl.LSTM
@@ -45,7 +45,7 @@ class LM(tfbp.Model):
         for size in self.hparams.hidden_sizes:
             self.forward.add(RNN(size, dropout=dropout, return_sequences=True))
 
-        self.forward.add(tfkl.Dense(self.hparams.vocab_size), activation=tf.nn.softmax)
+        self.forward.add(tfkl.Dense(self.hparams.vocab_size, activation=tf.nn.softmax))
 
         self.cross_entropy = tf.losses.SparseCategoricalCrossentropy(
             reduction=tf.keras.losses.Reduction.NONE
@@ -70,7 +70,7 @@ class LM(tfbp.Model):
 
         # Initialize the embedding matrix.
         if self.step.numpy() == 0:
-            utils.initialize_embeds(self.embeds, data_loader.embedding_matrix)
+            utils.initialize_embeds(self.embed, data_loader.embedding_matrix)
 
         # Train/validation split.
         train_dataset, valid_dataset = data_loader()

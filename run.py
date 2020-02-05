@@ -124,7 +124,7 @@ if __name__ == "__main__":
     data_loader = DataLoader(**kwargs)
 
     # Restore the model's weights, or save them for a new run.
-    if os.path.isfile(os.path.join(model.save_dir), "checkpoint"):
+    if os.path.isfile(os.path.join(model.save_dir, "checkpoint")):
         model.restore()
     else:
         model.save()

@@ -1,4 +1,5 @@
 import os
+import sys
 
 import arrow
 import pandas as pd
@@ -18,22 +19,30 @@ def parse_row(row):
         row["dislike_count"] = int(row["dislike_count"])
     if "view_count" in row:
         row["view_count"] = int(row["view_count"])
-
+    
+    print(row)
     return (row,)
 
 
 if __name__ == "__main__":
+    overwrite = False
+    if len(sys.argv) > 2:
+        print("Usage: python -m scripts.firebase_write [overwrite]?")
+        exit()
+    if len(sys.argv) == 2:
+        overwrite = True
+
     db = utils.firebase()
     data_dir = os.path.join("data", "youtube_new")
-
-    df = pd.read_csv(os.path.join(data_dir, "videos.csv"), index_col="id", dtype=str)
-    for index, row in df.iterrows():
-        doc_ref = db.collection("videos").document(index)
-        if utils.timeout_do("get", doc_ref).to_dict() is None:
-            utils.timeout_do("set", doc_ref, args=parse_row(row))
 
     df = pd.read_csv(os.path.join(data_dir, "comments.csv"), index_col="id", dtype=str)
     for index, row in df.iterrows():
         doc_ref = db.collection("comments").document(index)
-        if utils.timeout_do("get", doc_ref).to_dict() is None:
+        if overwrite or utils.timeout_do("get", doc_ref).to_dict() is None:
+            utils.timeout_do("set", doc_ref, args=parse_row(row))
+
+    df = pd.read_csv(os.path.join(data_dir, "videos.csv"), index_col="id", dtype=str)
+    for index, row in df.iterrows():
+        doc_ref = db.collection("videos").document(index)
+        if overwrite or utils.timeout_do("get", doc_ref).to_dict() is None:
             utils.timeout_do("set", doc_ref, args=parse_row(row))

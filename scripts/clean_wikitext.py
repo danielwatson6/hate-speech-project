@@ -55,7 +55,7 @@ if __name__ == "__main__":
             # Write tokens sorted by frequency.
             if partition == "train":
                 print("  sorting vocabulary...")
-                with open(os.path.join(root, f"wiki.vocab"), "w") as wf_voc:
+                with open(os.path.join(root, f"wiki.vocab.tsv"), "w") as wf_voc:
 
                     # Special tokens first!
                     unk_count = counts["<unk>"]

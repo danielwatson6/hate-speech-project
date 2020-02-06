@@ -1,5 +1,7 @@
 """Miscellaneous functions used exclusively by data loaders."""
 
+import os
+
 import numpy as np
 import tensorflow as tf
 

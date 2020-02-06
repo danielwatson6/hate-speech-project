@@ -15,7 +15,7 @@ class WikiText(tfbp.DataLoader):
         "punctuation": True,
         "lowercase": True,
     }
-    
+
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
         if self.hparams.corpus == 103:
@@ -25,7 +25,7 @@ class WikiText(tfbp.DataLoader):
         else:
             raise ValueError("`corpus` hyperparameter can only attain values 2 or 103.")
 
-        vocab_path = os.path.join(self._data_path, "wiki.vocab")
+        vocab_path = os.path.join(self._data_path, "wiki.vocab.tsv")
         embeds_path = os.path.join(self._data_path, "wiki.npy")
 
         # Used by models to display outputs as strings; the conversion is data-dependent.
@@ -38,7 +38,6 @@ class WikiText(tfbp.DataLoader):
         self.embedding_matrix = utils.save_or_load_embeds(
             embeds_path, vocab_path, self.hparams.vocab_size
         )
-
 
     def call(self):
         if self.method == "fit":
@@ -61,6 +60,7 @@ class WikiText(tfbp.DataLoader):
     def _batch_to_ids(self, batch):
         sequences = tf.strings.split(batch)
         # TODO: implement optional lowercasing and punctuation removal.
+        # tf.strings
         if self.hparams.lowercase:
             ...
         if not self.hparams.punctuation:

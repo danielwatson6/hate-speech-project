@@ -60,7 +60,6 @@ class LM(tfbp.Model):
         probs = self(x[:-1])
         # Avoid punishing the model for "wrong" guesses on padded data.
         mask = tf.cast(tf.not_equal(labels, 0), tf.float32)
-        mask = tf.tile(tf.expand_dims(mask, -1), [1, 1, self.hparams.vocab_size])
         masked_loss = self.cross_entropy(labels, probs) * mask
         return tf.reduce_mean(masked_loss)
 
@@ -68,13 +67,14 @@ class LM(tfbp.Model):
     def fit(self, data_loader):
         opt = tf.optimizers.Adam(self.hparams.learning_rate)
 
-        # Initialize the embedding matrix.
-        if self.step.numpy() == 0:
-            utils.initialize_embeds(self.embed, data_loader.embedding_matrix)
-
         # Train/validation split.
         train_dataset, valid_dataset = data_loader()
         valid_dataset_infinite = utils.infinite(valid_dataset)
+
+        # Initialize the embedding matrix after building the model.
+        if self.step.numpy() == 0:
+            self(next(valid_dataset_infinite))
+            utils.initialize_embeds(self.embed, data_loader.embedding_matrix)
 
         # TensorBoard writers.
         train_writer = self.make_summary_writer("train")
@@ -82,7 +82,11 @@ class LM(tfbp.Model):
 
         while self.epoch.numpy() < self.hparams.epochs:
             for x in train_dataset:
-                opt.minimize(self.loss(x), self.trainable_weights)
+
+                with tf.GradientTape() as g:
+                    train_loss = self.loss(x)
+                grads = g.gradient(train_loss, self.trainable_weights)
+                opt.apply_gradients(zip(grads, self.trainable_weights))
 
                 step = self.step.numpy()
                 if step % 100 == 0:

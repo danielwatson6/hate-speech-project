@@ -29,11 +29,14 @@ if __name__ == "__main__":
 
                 # Change numbers, possibly with commas or decimal points, to `<num>`.
                 line = re.sub(r"[0-9]+", " <num> ", line)
-                line = re.sub(r"<num> @.@", " ", line)
+                line = re.sub(r"<num> @[,\.]@", " ", line)
                 line = re.sub(r"<num>(?: <num>)+", " <num> ", line)
 
+                # Remove @'s surrounding dashes (already tokenized).
+                line = re.sub(r"@-@", "-", line)
+
                 # Remove any other weird characters.
-                line = re.sub(r"[^A-Za-z<>'\.,;:]", " ", line)
+                line = re.sub(r"[^A-Za-z<>'\.,;:-]", " ", line)
                 line = shrink_spaces(line)
 
                 # Segment into sentences / independent clauses by tokenized '.', ';'.

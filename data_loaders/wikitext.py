@@ -58,16 +58,14 @@ class WikiText(tfbp.DataLoader):
             return dataset.map(self._batch_to_ids)
 
     def _batch_to_ids(self, batch):
-        sequences = tf.strings.split(batch)
-        # TODO: implement optional lowercasing and punctuation removal.
-        # tf.strings
-        if self.hparams.lowercase:
-            ...
         if not self.hparams.punctuation:
-            ...
+            batch = tf.strings.regex_replace(batch, "[\.,;:-]", "")
+        if self.hparams.lowercase:
+            batch = tf.strings.lower(batch)
 
-        # Convert the ragged tensor to a regular tensor. This takes care of padding.
-        padded = sequences.to_tensor(default_value="<pad>")
+        # No need to shrink spaces, this is handled correctly by `tf.strings.split`.
+        sequences = tf.strings.split(batch).to_tensor(default_value="<pad>")
+
         if self.hparams.max_seq_len:
             padded = padded[:, : self.hparams.max_seq_len]
         return self.word_to_id(padded)

@@ -128,7 +128,7 @@ class LM(tfbp.Model):
             ppxs = tf.math.exp(self.loss(batch))
             for ppx in ppxs:
                 total_ppx.append(ppx)
-        print("{:.4f}".format(sum(total_ppx) / len(total_ppx))) 
+            print("{:.4f}".format(sum(total_ppx) / len(total_ppx))) 
 
     @tfbp.runnable
     def evaluate(self, data_loader):

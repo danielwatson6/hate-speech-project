@@ -64,7 +64,7 @@ class WikiText(tfbp.DataLoader):
             batch = tf.strings.lower(batch)
 
         # No need to shrink spaces, this is handled correctly by `tf.strings.split`.
-        sequences = tf.strings.split(batch).to_tensor(default_value="<pad>")
+        padded = tf.strings.split(batch).to_tensor(default_value="<pad>")
 
         if self.hparams.max_seq_len:
             padded = padded[:, : self.hparams.max_seq_len]

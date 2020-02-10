@@ -31,7 +31,11 @@ class LM(tfbp.Model):
         self.embed = tfkl.Embedding(self.hparams.vocab_size, 300)
         self.embed.trainable = self.hparams.fine_tune_embeds
 
+<<<<<<< HEAD
         self.forward = tf.keras.Sequential()
+=======
+        self.forward = tfkl.Sequential()
+>>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f
 
         if self.hparams.use_lstm:
             RNN = tfkl.LSTM
@@ -45,7 +49,11 @@ class LM(tfbp.Model):
         for size in self.hparams.hidden_sizes:
             self.forward.add(RNN(size, dropout=dropout, return_sequences=True))
 
+<<<<<<< HEAD
         self.forward.add(tfkl.Dense(self.hparams.vocab_size, activation=tf.nn.softmax))
+=======
+        self.forward.add(tfkl.Dense(self.hparams.vocab_size), activation=tf.nn.softmax)
+>>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f
 
         self.cross_entropy = tf.losses.SparseCategoricalCrossentropy(
             reduction=tf.keras.losses.Reduction.NONE
@@ -60,6 +68,10 @@ class LM(tfbp.Model):
         probs = self(x[:-1])
         # Avoid punishing the model for "wrong" guesses on padded data.
         mask = tf.cast(tf.not_equal(labels, 0), tf.float32)
+<<<<<<< HEAD
+=======
+        mask = tf.tile(tf.expand_dims(mask, -1), [1, 1, self.hparams.vocab_size])
+>>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f
         masked_loss = self.cross_entropy(labels, probs) * mask
         return tf.reduce_mean(masked_loss)
 
@@ -67,26 +79,40 @@ class LM(tfbp.Model):
     def fit(self, data_loader):
         opt = tf.optimizers.Adam(self.hparams.learning_rate)
 
+<<<<<<< HEAD
+=======
+        # Initialize the embedding matrix.
+        if self.step.numpy() == 0:
+            utils.initialize_embeds(self.embeds, data_loader.embedding_matrix)
+
+>>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f
         # Train/validation split.
         train_dataset, valid_dataset = data_loader()
         valid_dataset_infinite = utils.infinite(valid_dataset)
 
+<<<<<<< HEAD
         # Initialize the embedding matrix after building the model.
         if self.step.numpy() == 0:
             self(next(valid_dataset_infinite))
             utils.initialize_embeds(self.embed, data_loader.embedding_matrix)
 
+=======
+>>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f
         # TensorBoard writers.
         train_writer = self.make_summary_writer("train")
         valid_writer = self.make_summary_writer("valid")
 
         while self.epoch.numpy() < self.hparams.epochs:
             for x in train_dataset:
+<<<<<<< HEAD
 
                 with tf.GradientTape() as g:
                     train_loss = self.loss(x)
                 grads = g.gradient(train_loss, self.trainable_weights)
                 opt.apply_gradients(zip(grads, self.trainable_weights))
+=======
+                opt.minimize(self.loss(x), self.trainable_weights)
+>>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f
 
                 step = self.step.numpy()
                 if step % 100 == 0:

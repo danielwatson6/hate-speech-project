@@ -32,11 +32,16 @@ if __name__ == "__main__":
                 line = re.sub(r"<num> @[,\.]@", " ", line)
                 line = re.sub(r"<num>(?: <num>)+", " <num> ", line)
 
+<<<<<<< HEAD
                 # Remove @'s surrounding dashes (already tokenized).
                 line = re.sub(r"@-@", "-", line)
 
                 # Remove any other weird characters.
                 line = re.sub(r"[^A-Za-z<>'\.,;:-]", " ", line)
+=======
+                # Remove any other weird characters.
+                line = re.sub(r"[^A-Za-z<>'\.,;:]", " ", line)
+>>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f
                 line = shrink_spaces(line)
 
                 # Segment into sentences / independent clauses by tokenized '.', ';'.
@@ -58,7 +63,7 @@ if __name__ == "__main__":
             # Write tokens sorted by frequency.
             if partition == "train":
                 print("  sorting vocabulary...")
-                with open(os.path.join(root, f"wiki.vocab.tsv"), "w") as wf_voc:
+                with open(os.path.join(root, f"wiki.vocab"), "w") as wf_voc:
 
                     # Special tokens first!
                     unk_count = counts["<unk>"]

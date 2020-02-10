@@ -1,13 +1,17 @@
 """Miscellaneous functions used exclusively by data loaders."""
 
+<<<<<<< HEAD
 import os
 
+=======
+>>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f
 import numpy as np
 import tensorflow as tf
 
 import utils
 
 
+<<<<<<< HEAD
 def make_word_id_maps(vocab_path, vocab_size):
     """Build word-to-id and id-to-word functions from a TSV file."""
 
@@ -37,6 +41,9 @@ def make_word_id_maps(vocab_path, vocab_size):
 def save_or_load_embeds(embeds_path, vocab_path, vocab_size):
     """Load or build and embedding matrix from a TSV file."""
 
+=======
+def save_or_load_embeds(embeds_path, vocab_path, vocab_size):
+>>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f
     should_save = False
 
     if not os.path.isfile(embeds_path):
@@ -60,3 +67,32 @@ def save_or_load_embeds(embeds_path, vocab_path, vocab_size):
         np.save(embeds_path, embedding_matrix)
 
     return embedding_matrix
+<<<<<<< HEAD
+=======
+
+
+def make_word_id_maps(vocab_path, vocab_size):
+    """Build word-to-id and id-to-word functions from a TSV file."""
+
+    # Args: filename, key_dtype, key_index, value_dtype, value_index, vocab_size.
+    word_to_id_init = tf.lookup.TextFileInitializer(
+        vocab_path,
+        tf.string,
+        0,
+        tf.int64,
+        tf.lookup.TextFileIndex.LINE_NUMBER,
+        vocab_size=vocab_size,
+    )
+    id_to_word_init = tf.lookup.TextFileInitializer(
+        vocab_path,
+        tf.int64,
+        tf.lookup.TextFileIndex.LINE_NUMBER,
+        tf.string,
+        0,
+        vocab_size=vocab_size,
+    )
+    word_to_id = tf.lookup.StaticHashTable(word_to_id_init, 1)
+    id_to_word = tf.lookup.StaticHashTable(id_to_word_init, "<unk>")
+
+    return word_to_id.lookup, id_to_word.lookup
+>>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f

@@ -8,9 +8,6 @@ from nltk.tokenize import word_tokenize
 import pandas as pd
 
 
-# we have to remove the commas (tozenization)
-
-
 def original_data():
     # TODO: change where it is reading from
     data = pd.read_csv("../data/ambiguity.csv")
@@ -24,7 +21,6 @@ def original_data():
     to_drop = [
         "block_num",
         "question_num",
-        "termInSentence",
         "sampleEnt_category",
         "sampleEnt_global",
         "weight",
@@ -44,7 +40,7 @@ def original_data():
     clean_data.drop_duplicates(subset="articleId", inplace=True)
     clean_data = clean_data.drop("rating", axis=1)
 
-    keys = ["id", "term", "sentence", "rating"]
+    keys = ["sentence", "index", "rating"]
 
     # write into a new file
     # TODO: change path
@@ -59,11 +55,28 @@ def original_data():
             if line_count == 0:
                 line_count += 1
             else:
+                # clean data
                 row_out = {k: 0 for k in keys}
-                row_out["id"] = row["articleId"]
-                row_out["term"] = row["term"]
-                row_out["sentence"] = row["sentenceText"]
+                # row_out["id"] = row["articleId"]
+                # row_out["term"] = row["term"]
+                # row_out["sentence"] = row["sentenceText"]
+
+                # replace special characters and numbers
+                sentence = row["termInSentence"]
+                sentence = re.sub(r"[^A-Za-z<>'\.,;:-]", " ", sentence)
+                sentence = re.sub(r"[0-9]+(?:\S[0-9]+)*", " <num> ", sentence)
+
+                tokenized_sentence = word_tokenize(sentence)
+                html_tag = tokenized_sentence.index(">")
+                # remove first html tags
+                del tokenized_sentence[html_tag - 5 : html_tag + 1]
+                term_index = html_tag - 5  # term index after removal of first html tag
+                # delete trailing </b>
+                del tokenized_sentence[term_index + 1 : term_index + 4]
+                row_out["sentence"] = " ".join(tokenized_sentence)
+                row_out["index"] = term_index
                 row_out["rating"] = row["rating_avg"]
+
                 writer.writerow(row_out)
 
         del data

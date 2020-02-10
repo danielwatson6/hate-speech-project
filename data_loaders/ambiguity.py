@@ -39,7 +39,7 @@ class ambiguity(tfbp.DataLoader):
 
     def _dict_to_pair(self, batch):
         sentence = batch["sentence"]
-        sentence = tf.strings.split(tweets).to_tensor(default_value="<pad>")
+        sentence = tf.strings.split(sentence).to_tensor(default_value="<pad>")
         sentence = self._word_to_id.lookup(sentence)  # TODO: word_to_id
 
         label = batch["rating"]

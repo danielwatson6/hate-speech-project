@@ -28,11 +28,6 @@ class WikiText(tfbp.DataLoader):
         vocab_path = os.path.join(self._data_path, "wiki.vocab.tsv")
         embeds_path = os.path.join(self._data_path, "wiki.npy")
 
-        # Used by models to display outputs as strings; the conversion is data-dependent.
-        self.word_to_id, self.id_to_word = utils.make_word_id_maps(
-            vocab_path, self.hparams.vocab_size
-        )
-
         # Used by models to find the initial values of the embedding matrix, which are
         # data-dependent.
         self.embedding_matrix = utils.save_or_load_embeds(
@@ -55,9 +50,9 @@ class WikiText(tfbp.DataLoader):
                     yield [input("Type a sentence: ")]
 
             dataset = tf.data.Dataset.from_generator(interact_mode_generator, tf.string)
-            return dataset.map(self._batch_to_ids)
+            return dataset.map(self._preprocess)
 
-    def _batch_to_ids(self, batch):
+    def _preprocess(self, batch):
         if not self.hparams.punctuation:
             batch = tf.strings.regex_replace(batch, "[\.,;:-]", "")
         if self.hparams.lowercase:
@@ -68,7 +63,7 @@ class WikiText(tfbp.DataLoader):
 
         if self.hparams.max_seq_len:
             padded = padded[:, : self.hparams.max_seq_len]
-        return self.word_to_id(padded)
+        return padded
 
     def _make_dataset(self, filename, shuffle=None):
         dataset = tf.data.TextLineDataset(os.path.join(self._data_path, filename))
@@ -78,6 +73,6 @@ class WikiText(tfbp.DataLoader):
 
         dataset = dataset.batch(self.hparams.batch_size)
         dataset = dataset.map(
-            self._batch_to_ids, num_parallel_calls=tf.data.experimental.AUTOTUNE
+            self._preprocess, num_parallel_calls=tf.data.experimental.AUTOTUNE
         )
         return dataset.prefetch(1)

@@ -16,12 +16,7 @@ class WikiText(tfbp.DataLoader):
         "lowercase": True,
     }
 
-<<<<<<< HEAD
-    def __init__(self, *a, **kw):
-        super().__init__(*a, **kw)
-=======
     def call(self):
->>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f
         if self.hparams.corpus == 103:
             self._data_path = os.path.join("data", "wikitext-103-raw")
         elif self.hparams.corpus == 2:
@@ -29,13 +24,8 @@ class WikiText(tfbp.DataLoader):
         else:
             raise ValueError("`corpus` hyperparameter can only attain values 2 or 103.")
 
-<<<<<<< HEAD
-        vocab_path = os.path.join(self._data_path, "wiki.vocab.tsv")
-        embeds_path = os.path.join(self._data_path, "wiki.npy")
-=======
         vocab_path = os.path.join(data_path, "wiki.vocab")
         embeds_path = os.path.join(data_path, "wiki.vocab")
->>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f
 
         # Used by models to display outputs as strings; the conversion is data-dependent.
         self.word_to_id, self.id_to_word = utils.make_word_id_maps(
@@ -50,14 +40,6 @@ class WikiText(tfbp.DataLoader):
 
     def call(self):
         if self.method == "fit":
-<<<<<<< HEAD
-            train_dataset = self._make_dataset("wiki.train.clean", shuffle=10000)
-            valid_dataset = self._make_dataset("wiki.valid.clean", shuffle=10000)
-            return train_dataset, valid_dataset
-
-        elif self.method == "evaluate":
-            return self._make_dataset("wiki.test.clean")
-=======
             train_dataset = self._make_dataset(
                 os.path.join(data_path, "wiki.train.clean"), shuffle=10000
             )
@@ -68,7 +50,6 @@ class WikiText(tfbp.DataLoader):
 
         elif self.method == "evaluate":
             return self._make_dataset(os.path.join(data_path, "wiki.test.clean"))
->>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f
 
         elif self.method == "interact":
 
@@ -80,16 +61,6 @@ class WikiText(tfbp.DataLoader):
             return dataset.map(self._batch_to_ids)
 
     def _batch_to_ids(self, batch):
-<<<<<<< HEAD
-        if not self.hparams.punctuation:
-            batch = tf.strings.regex_replace(batch, "[\.,;:-]", "")
-        if self.hparams.lowercase:
-            batch = tf.strings.lower(batch)
-
-        # No need to shrink spaces, this is handled correctly by `tf.strings.split`.
-        sequences = tf.strings.split(batch).to_tensor(default_value="<pad>")
-
-=======
         sequences = tf.strings.split(batch)
         # TODO: implement optional lowercasing and punctuation removal.
         if self.hparams.lowercase:
@@ -99,18 +70,12 @@ class WikiText(tfbp.DataLoader):
 
         # Convert the ragged tensor to a regular tensor. This takes care of padding.
         padded = sequences.to_tensor(default_value="<pad>")
->>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f
         if self.hparams.max_seq_len:
             padded = padded[:, : self.hparams.max_seq_len]
         return self.word_to_id(padded)
 
-<<<<<<< HEAD
-    def _make_dataset(self, filename, shuffle=None):
-        dataset = tf.data.TextLineDataset(os.path.join(self._data_path, filename))
-=======
     def _make_dataset(self, path, shuffle=None):
         dataset = tf.data.TextLineDataset(path)
->>>>>>> 56e7b276d3a156773adf4c8c0c08393d9448d84f
 
         if shuffle:
             dataset = dataset.shuffle(shuffle)

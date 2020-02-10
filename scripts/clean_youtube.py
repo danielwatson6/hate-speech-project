@@ -13,6 +13,6 @@ if __name__ == "__main__":
     num_videos_per_channel = 37897 // 20
 
     path = os.path.join(os.environ["DATASETS"], "youtube_right")
-
     channels = list(os.listdir(path))
-    print(channels)
+    for channel in channels:
+        print(channel)

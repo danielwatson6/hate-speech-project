@@ -1,5 +1,7 @@
 """Miscellaneous functions used exclusively by models."""
 
+import tensorflow as tf
+
 
 def infinite(dataset):
     """Create a copy of a `tf.data.Dataset` for endless validation.

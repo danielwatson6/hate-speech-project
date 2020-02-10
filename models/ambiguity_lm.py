@@ -24,7 +24,7 @@ class LM(tfbp.Model):
         # TODO: find a way to make the model not use this. The hash tables for word<->id
         # conversion are immutable and cannot be overwritten as we do with the embedding
         # matrix.
-        "vocab_path": None,
+        "vocab_path": "",
     }
 
     def __init__(self, *args, **kwargs):
@@ -33,7 +33,7 @@ class LM(tfbp.Model):
         self.epoch = tf.Variable(0, trainable=False)
 
         # TODO: find a way to make the model not use this.
-        if self.hparams.vocab_path is None:
+        if not self.hparams.vocab_path:
             raise ValueError("Please specify --vocab_path=path/to/vocab.tsv")
         self.word_to_id, self.id_to_word = utils.make_word_id_maps(
             self.hparams.vocab_path, self.hparams.vocab_size,

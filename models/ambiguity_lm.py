@@ -122,7 +122,7 @@ class LM(tfbp.Model):
 
     @tfbp.runnable
     def ambiguity(self, data_loader):
-        for x in data_loader:
+        for x in data_loader():
             probs = self(x)
             # nlog_probs = -tf.math.log(probs + 1e-8)
             nlog_probs = -tf.math.log(probs)

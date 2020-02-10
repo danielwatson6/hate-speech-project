@@ -14,6 +14,5 @@ if __name__ == "__main__":
 
     path = os.path.join(os.environ["DATASETS"], "youtube_right")
 
-    channels = list({re.sub(r"([a-z\.]+)[0-9]*", r"\1", f) for f in os.listdir(path)})
-    random.shuffle(channels)
+    channels = list(os.listdir(path))
     print(channels)

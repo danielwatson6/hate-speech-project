@@ -11,8 +11,6 @@ import pandas as pd
 def original_data():
     data = pd.read_csv(os.path.join("data", "ambiguity.csv"))
 
-    print(data)
-
     # drop rejected rows
     index_names = data[data["rejected"] == 1].index
     data.drop(index_names, inplace=True)

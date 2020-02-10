@@ -66,9 +66,9 @@ class LM(tfbp.Model):
         return self.forward(self.embed(self.word_to_id(x)))
 
     def loss(self, x):
-        inputs = x[:-1]
-        labels = x[1:]
-        probs = self(x[:-1])
+        inputs = self.word_to_id(x[:, :-1])
+        labels = self.word_to_id(x[:, 1:])
+        probs = self(inputs)
         # Avoid punishing the model for "wrong" guesses on padded data.
         mask = tf.cast(tf.not_equal(labels, 0), tf.float32)
         masked_loss = self.cross_entropy(labels, probs) * mask

@@ -61,7 +61,7 @@ class LM(tfbp.Model):
         # Avoid punishing the model for "wrong" guesses on padded data.
         mask = tf.cast(tf.not_equal(labels, 0), tf.float32)
         masked_loss = self.cross_entropy(labels, probs) * mask
-        return tf.reduce_mean(masked_loss)
+        return tf.reduce_mean(masked_loss, axis=1)
 
     @tfbp.runnable
     def fit(self, data_loader):
@@ -81,17 +81,17 @@ class LM(tfbp.Model):
         valid_writer = self.make_summary_writer("valid")
 
         while self.epoch.numpy() < self.hparams.epochs:
-            for x in train_dataset:
+            for batch in train_dataset:
 
                 with tf.GradientTape() as g:
-                    train_loss = self.loss(x)
+                    train_loss = tf.reduce_mean(self.loss(batch))
                 grads = g.gradient(train_loss, self.trainable_weights)
                 opt.apply_gradients(zip(grads, self.trainable_weights))
 
                 step = self.step.numpy()
                 if step % 100 == 0:
-                    x = next(valid_dataset_infinite)
-                    valid_loss = self.loss(x)
+                    valid_batch = next(valid_dataset_infinite)
+                    valid_loss = tf.reduce_mean(self.loss(valid_batch))
                     print(
                         "Step {} (train_loss={:.4f} valid_loss={:.4f})".format(
                             step, train_loss, valid_loss
@@ -123,9 +123,12 @@ class LM(tfbp.Model):
                 print(", ".join(["{:.4f}".format(y) for y in sequence]))
 
     def _evaluate(self, dataset):
-        # TODO: research and implement a standard benchmark used to evaluate language
-        # models (BLEU score??)
-        ...
+        total_ppx = []
+        for batch in dataset:
+            ppxs = tf.math.exp(self.loss(batch))
+            for ppx in ppxs:
+                total_ppx.append(ppx)
+        print("{:.4f}".format(sum(total_ppx) / len(total_ppx))) 
 
     @tfbp.runnable
     def evaluate(self, data_loader):

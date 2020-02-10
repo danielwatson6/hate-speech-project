@@ -9,9 +9,9 @@ import pandas as pd
 
 
 def original_data():
-    # TODO: change where it is reading from
-    data = pd.read_csv("../data/ambiguity.csv")
-    # data = pd.read_csv(os.path.join("data", "ambiguity.csv"))
+    data = pd.read_csv(os.path.join("data", "ambiguity.csv"))
+
+    print(data)
 
     # drop rejected rows
     index_names = data[data["rejected"] == 1].index
@@ -27,7 +27,7 @@ def original_data():
         "item_hash",
         "mean_time",
         "worker_anon",
-        " ",
+        "survey_num",
         "rejected",
     ]
     data = data.drop(to_drop, axis=1)
@@ -43,9 +43,7 @@ def original_data():
     keys = ["sentence", "index", "rating"]
 
     # write into a new file
-    # TODO: change path
-    with open("../data/ambiguity.clean.csv", "w") as f:
-        # with open(os.path.join("data", "ambiguity.clean.csv"), "w") as f:
+    with open(os.path.join("data", "ambiguity.clean.csv"), "w") as f:
         writer = DictWriter(f, keys)
         writer.writeheader()
         line_count = 0  # used to remove column names
@@ -61,12 +59,19 @@ def original_data():
                 # row_out["term"] = row["term"]
                 # row_out["sentence"] = row["sentenceText"]
 
-                # replace special characters and numbers
+                # replace special characters
                 sentence = row["termInSentence"]
-                sentence = re.sub(r"[^A-Za-z<>'\.,;:-]", " ", sentence)
-                sentence = re.sub(r"[0-9]+(?:\S[0-9]+)*", " <num> ", sentence)
+                sentence = re.sub(r"[^A-Za-z<>'\.,;:\d-]", " ", sentence)
 
-                tokenized_sentence = word_tokenize(sentence)
+                # replace numbers with <num>
+                tokenized_sentence = []
+                for word in word_tokenize(sentence):
+                    if re.match(r"^\d+(?:[\.,-].+)*$", word):
+                        tokenized_sentence.append("<num>")
+                    else:
+                        for w in " - ".join(word.split("-")).split():
+                            tokenized_sentence.append(w)
+
                 html_tag = tokenized_sentence.index(">")
                 # remove first html tags
                 del tokenized_sentence[html_tag - 5 : html_tag + 1]

@@ -18,4 +18,7 @@ if __name__ == "__main__":
         channel_files = [c for c in os.listdir(path) if c.startswith(channel)]
         for cf in channel_files:
             df = pd.read_csv(os.path.join(path, cf))
-            print(df)
+            print(df['content'])
+
+    
+    

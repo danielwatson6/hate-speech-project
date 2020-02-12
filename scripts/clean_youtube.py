@@ -20,7 +20,7 @@ if __name__ == "__main__":
             df = pd.read_csv(os.path.join(path, cf))
             df = df.sample(frac=1).reset_index(drop=True)
             for row in df.iterrows():
-                print(" ".join(utils.tokenize(str(row["content"]))) + "\n")
+                print(" ".join(utils.tokenize(row["content"])) + "\n")
 
 
 

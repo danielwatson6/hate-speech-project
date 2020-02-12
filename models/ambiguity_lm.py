@@ -21,12 +21,23 @@ class LM(tfbp.Model):
         "use_lstm": True,  # GRU will be used if set to false.
         "learning_rate": 1e-3,
         "epochs": 10,
+        # TODO: find a way to make the model not use this. The hash tables for word<->id
+        # conversion are immutable and cannot be overwritten as we do with the embedding
+        # matrix.
+        "vocab_path": "",
     }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.step = tf.Variable(0, trainable=False)
         self.epoch = tf.Variable(0, trainable=False)
+
+        # TODO: find a way to make the model not use this.
+        if not self.hparams.vocab_path:
+            raise ValueError("Please specify --vocab_path=path/to/vocab.tsv")
+        self.word_to_id, self.id_to_word = utils.make_word_id_maps(
+            self.hparams.vocab_path, self.hparams.vocab_size,
+        )
 
         self.embed = tfkl.Embedding(self.hparams.vocab_size, 300)
         self.embed.trainable = self.hparams.fine_tune_embeds
@@ -52,15 +63,17 @@ class LM(tfbp.Model):
         )
 
     def call(self, x):
-        return self.forward(self.embed(x))
+        return self.forward(self.embed(self.word_to_id(x)))
 
     def loss(self, x):
-        inputs = x[:, :-1]
-        labels = x[:, 1:]
+        labels = self.word_to_id(x[:, 1:])
         probs = self(x[:, :-1])
         # Avoid punishing the model for "wrong" guesses on padded data.
         mask = tf.cast(tf.not_equal(labels, 0), tf.float32)
         masked_loss = self.cross_entropy(labels, probs) * mask
+
+        # TODO: correct mean computations.
+        mean_factor = tf.math.reciprocal(tf.reduce_sum(mask, axis=1))
         return tf.reduce_mean(masked_loss, axis=1)
 
     @tfbp.runnable
@@ -112,7 +125,7 @@ class LM(tfbp.Model):
 
     @tfbp.runnable
     def ambiguity(self, data_loader):
-        for x in data_loader:
+        for x in data_loader():
             probs = self(x)
             # nlog_probs = -tf.math.log(probs + 1e-8)
             nlog_probs = -tf.math.log(probs)

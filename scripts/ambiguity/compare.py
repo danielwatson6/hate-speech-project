@@ -30,7 +30,7 @@ if __name__ == "__main__":
         )
         exit()
 
-    data_loader = tfbp.get_data_loader(sys.argv[1])
+    data_loader = sys.argv[1]
     save_dirs = sys.argv[2:]
 
     ambiguities = [get_ambiguity("wordnet ambiguity_wn", data_loader)]

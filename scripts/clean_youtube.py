@@ -21,9 +21,6 @@ if __name__ == "__main__":
             df = df.sample(frac=1).reset_index(drop=True)
             content = df.pop('content')
             print(content.values)
-            dataset = tf.data.Dataset.from_tensor_slices(content.values, dtype=tf.string)
-            print(dataset)
-
 
 
 

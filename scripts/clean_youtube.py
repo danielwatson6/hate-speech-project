@@ -19,7 +19,7 @@ if __name__ == "__main__":
             df = pd.read_csv(os.path.join(path, cf))
             df = df.sample(frac=1).reset_index(drop=True)
             content = df['content']
-            for row in content.iterrows():
+            for row in content:
                 youtube_dump.write(str(row) + '\n')
             youtube_dump.close()
 

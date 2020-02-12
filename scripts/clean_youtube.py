@@ -28,6 +28,8 @@ if __name__ == "__main__":
       tf.data.TextLineDataset(x).map(parse_fn, num_parallel_calls=1), 
       cycle_length=4, block_length=16) 
     print(dataset)
+    for x in dataset:
+      print(x)
 
 
      

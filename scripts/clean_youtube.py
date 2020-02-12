@@ -20,7 +20,7 @@ if __name__ == "__main__":
             df = pd.read_csv(os.path.join(path, cf))
             df = df.sample(frac=1).reset_index(drop=True)
             content = df.pop('content')
-            dataset = tf.data.Dataset.from_tensor_slices(target.values)
+            dataset = tf.data.Dataset.from_tensor_slices(content.values)
             print(dataset)
 
 

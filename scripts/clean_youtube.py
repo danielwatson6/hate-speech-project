@@ -19,7 +19,7 @@ if __name__ == "__main__":
             df = pd.read_csv(os.path.join(path, cf))
             df = df.sample(frac=1).reset_index(drop=True)
             content = df["content"]
-            np.savetxt(youtube_dump, content.values)
+            np.savetxt(youtube_dump, content)
             youtube_dump.close()
 
 

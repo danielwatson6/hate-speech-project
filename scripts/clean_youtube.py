@@ -21,8 +21,8 @@ if __name__ == "__main__":
         dataset = dataset.interleave(lambda x: 
             tf.data.TextLineDataset(x).map(parse_fn, num_parallel_calls=1), 
             cycle_length=4, block_length=16) 
-        list(dataset.as_numpy_iterator()) 
-        
+        for x, y in dataset:
+            print(x, y)
 
 
 

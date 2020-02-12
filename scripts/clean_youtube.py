@@ -20,8 +20,8 @@ if __name__ == "__main__":
     for channel in channels:    
         channel_files = [c for c in os.listdir(path) if c.startswith(channel)]
         for cf in channel_files:
-          parse_fn(cf)
-
+          parse_fn(os.path.join(path, cf))
+          
 
 
 

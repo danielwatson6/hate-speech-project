@@ -37,31 +37,32 @@ if __name__ == "__main__":
     for save_dir in save_dirs:
         ambiguities.append(get_ambiguity(save_dir, data_loader))
 
-    # if data_loader == "ambiguity":
-    #     # ambiguity for language model and wordnet, ambiguities array 3D, per word at inner most level, per sentence, outermost level is the language model
-    #     df = pd.read_csv(os.path.join("data", "ambiguity.clean.csv"))
+    if data_loader == "ambiguity":
+        # ambiguity for language model and wordnet, ambiguities array 3D, per word at inner most level, per sentence, outermost level is the language model
+        df = pd.read_csv(os.path.join("data", "ambiguity.clean.csv"))
 
-    #     ambiguities_per_word = []
+        ambiguities_per_word = []
 
-    #     human_ambiguities = []
-    #     for sequence in df.iterrows():
-    #         index = sequence["index"]
-    #         human_ambiguity = sequence["rating"]
-    #         human_ambiguities.append(human_ambiguity)
+        human_ambiguities = []
+        for sequence in df.iterrows():
+            index = sequence["index"]
+            human_ambiguity = sequence["rating"]
+            human_ambiguities.append(human_ambiguity)
 
-    #     word_net = []
-    #     language_model = []
-    #     for m, model in enumrate(ambiguities):
-    #         model_comparison = []
-    #         for i, sentence in enumerate(model):
-    #             index = df.iloc[i]["index"]
-    #             ambiguity = sentence[index]
-    #             if m == 0:
+        word_net = []
+        language_model = []
+        for m, model in enumrate(ambiguities):
+            for i, sentence in enumerate(model):
+                index = df.iloc[i]["index"]
+                ambiguity = sentence[index]
+                if m == 0:
+                    word_net.append(ambiguity)  # first model is the word_net
+                else:
+                    language_model.append(ambiguity)
 
-    #             # model_comparison.append()
+                # compare rating and model rating
 
-    #             # compare rating and model rating
-    #             ...
+                ...
 
     # Correlation plots between all the distinct pairs of models.
     save_dirs = ["wordnet"] + save_dirs

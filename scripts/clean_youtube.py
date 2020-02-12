@@ -16,10 +16,11 @@ if __name__ == "__main__":
     path = os.path.join(os.environ["DATASETS"], "youtube_right")
     channels = list(os.listdir(path))
 
-    for channel in channels:
+    for channel in channels:    
         channel_files = [c for c in os.listdir(path) if c.startswith(channel)]
         for cf in channel_files:
             df = pd.read_csv(os.path.join(path, cf))
+            df = df.sample(frac=1).reset_index(drop=True)
             print(df['content'])
 
 

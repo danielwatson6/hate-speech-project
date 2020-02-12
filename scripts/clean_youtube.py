@@ -9,9 +9,7 @@ import utils
 
 
 def parse_fn(filename): 
-    df = pd.read_csv(filename)
-    content = df.pop('content').to_frame()
-    return content
+  return tf.data.Dataset.range(10)
 
 if __name__ == "__main__":
     path = os.path.join(os.environ["DATASETS"], "youtube_right")

@@ -10,7 +10,7 @@ import utils
 
 def parse_fn(filename): 
     df = pd.read_csv(filename)
-    content = df.pop('content')
+    content = df.pop('content').to_frame()
     print(content)
 
 if __name__ == "__main__":

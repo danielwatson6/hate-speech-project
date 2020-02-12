@@ -23,11 +23,13 @@ if __name__ == "__main__":
     #       parse_fn(os.path.join(path, cf))
     for channel in channels:
       channel_files = [c for c in os.listdir(path) if c.startswith(channel)]
-    dataset = tf.data.Dataset.from_tensor_slices(channel_files)
-    dataset = dataset.interleave(lambda x: 
-      tf.data.TextLineDataset(x).map(parse_fn, num_parallel_calls=1), 
-      cycle_length=4, block_length=16) 
-    print(dataset)
+    print(channel_files)
+
+    # dataset = tf.data.Dataset.from_tensor_slices(channel_files)
+    # dataset = dataset.interleave(lambda x: 
+    #   tf.data.TextLineDataset(x).map(parse_fn, num_parallel_calls=1), 
+    #   cycle_length=4, block_length=16) 
+    # print(dataset)
 
 
      

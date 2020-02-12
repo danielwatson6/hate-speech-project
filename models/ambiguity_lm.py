@@ -71,10 +71,9 @@ class LM(tfbp.Model):
         # Avoid punishing the model for "wrong" guesses on padded data.
         mask = tf.cast(tf.not_equal(labels, 0), tf.float32)
         masked_loss = self.cross_entropy(labels, probs) * mask
-
-        # TODO: correct mean computations.
+        # Compute means by correct length.
         mean_factor = tf.math.reciprocal(tf.reduce_sum(mask, axis=1))
-        return tf.reduce_mean(masked_loss, axis=1)
+        return tf.reduce_sum(masked_loss, axis=1) * mean_factor
 
     @tfbp.runnable
     def fit(self, data_loader):

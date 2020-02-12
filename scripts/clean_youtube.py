@@ -15,9 +15,15 @@ if __name__ == "__main__":
     path = os.path.join(os.environ["DATASETS"], "youtube_right")
     channels = list(os.listdir(path))
     dataset = tf.data.Dataset.from_tensor_slices(channels)
-    dataset = dataset.interleave(lambda x: 
-        tf.data.TextLineDataset(x).map(parse_fn, num_parallel_calls=1), 
-        cycle_length=4, block_length=16)
+    
+    for x, y in dataset:
+        print(x,y)
+        
+    # dataset = dataset.interleave(lambda x: 
+    #     tf.data.TextLineDataset(x).map(parse_fn, num_parallel_calls=1), 
+    #     cycle_length=4, block_length=16)
+    
+
         
 
 

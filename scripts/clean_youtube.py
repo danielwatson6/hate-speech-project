@@ -16,9 +16,9 @@ if __name__ == "__main__":
     channels = list(os.listdir(path))
     dataset = tf.data.Dataset.from_tensor_slices(channels)
     
-    for x, y in dataset:
-        print(x,y)
-        
+    for x in dataset:
+        print(x)
+
     # dataset = dataset.interleave(lambda x: 
     #     tf.data.TextLineDataset(x).map(parse_fn, num_parallel_calls=1), 
     #     cycle_length=4, block_length=16)

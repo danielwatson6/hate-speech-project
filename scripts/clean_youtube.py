@@ -19,8 +19,8 @@ if __name__ == "__main__":
             youtube_dump = open(os.path.join("../data", f"{cf}_text_dump.txt"), "w+")
             df = pd.read_csv(os.path.join(path, cf))
             df = df.sample(frac=1).reset_index(drop=True)
-            for row in df.iterrows():
-                print(row)
+            content = df["content"]
+            print(content)
 
 
 

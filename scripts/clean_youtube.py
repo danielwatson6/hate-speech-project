@@ -15,12 +15,13 @@ if __name__ == "__main__":
     for channel in channels:    
         channel_files = [c for c in os.listdir(path) if c.startswith(channel)]
         for cf in channel_files:
+            
             youtube_dump = open(os.path.join("../data", f"{cf}_text_dump.txt"), "w+")
             df = pd.read_csv(os.path.join(path, cf))
             df = df.sample(frac=1).reset_index(drop=True)
             for row in df.iterrows():
                 print(" ".join(utils.tokenize(str(row["content"]))) + "\n")
-                
+
 
 
 

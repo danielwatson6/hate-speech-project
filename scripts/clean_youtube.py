@@ -31,8 +31,9 @@ if __name__ == "__main__":
     dataset = filepath_dataset.interleave(
         lambda filepath: tf.data.TextLineDataset(filepath),
         cycle_length=n_readers)
-    dataset = dataset.shuffle(5)
-    dataset = dataset.map(parse_fn,num_parallel_calls=2)
+    print(dataset)
+    # dataset = dataset.shuffle(5)
+    # dataset = dataset.map(parse_fn,num_parallel_calls=2)
 
      
 

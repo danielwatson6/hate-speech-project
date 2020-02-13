@@ -27,7 +27,9 @@ if __name__ == "__main__":
 
     filepath_dataset = tf.data.Dataset.list_files(channel_paths, seed=42)
     print(filepath_dataset)
-
+    for x in filepath_dataset:
+      print(x)
+      
     dataset = filepath_dataset.interleave(
         lambda filepath: tf.data.TextLineDataset(filepath),
         cycle_length=n_readers)

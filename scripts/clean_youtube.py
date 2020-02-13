@@ -13,8 +13,9 @@ n_readers = 5
 def parse_fn(line): 
   defs = [0.] * n_inputs + [tf.constant([], dtype=tf.float32)]
   fields = tf.io.decode_csv(line, record_defaults=defs)
-  print(fields)
-  return fields
+  x = tf.stack(fields[14])
+  print(x)
+  return x
 
 
 if __name__ == "__main__":

@@ -8,8 +8,10 @@ import pandas as pd
 import utils
 
 
-def parse_fn(filename): 
-  return tf.data.Dataset.range(10)
+def parse_fn(line): 
+  fields = tf.io.decode_csv(line)
+  print(fields)
+
 
 if __name__ == "__main__":
     path = os.path.join(os.environ["DATASETS"], "youtube_right")
@@ -20,14 +22,13 @@ if __name__ == "__main__":
     print(channel_paths)
 
 
-    files_ds = tf.data.Dataset.from_tensor_slices(channel_paths)
-    lines_ds = files_ds.interleave(tf.data.TextLineDataset, cycle_length=20)
-
-    for i, line in enumerate(lines_ds.take(9)):
-      if i % 3 == 0:
-        print()
-      print(line.numpy())
-
+    filepath_dataset = tf.data.Dataset.list_files(channel_paths, seed=42)
+    dataset = filepath_dataset.interleave(
+        lambda filepath: tf.data.TextLineDataset(filepath),
+        cycle_length=n_readers)
+    dataset = dataset.shuffle(5)
+    dataset = dataset.map(parse_fn,num_parallel_calls=2)
+    
      
 
           

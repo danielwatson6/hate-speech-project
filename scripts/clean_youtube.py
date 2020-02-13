@@ -24,9 +24,9 @@ if __name__ == "__main__":
     lines_ds = files_ds.interleave(tf.data.TextLineDataset, cycle_length=3)
 
     for i, line in enumerate(lines_ds.take(9)):
-    if i % 3 == 0:
-      print()
-    print(line.numpy())
+      if i % 3 == 0:
+        print()
+      print(line.numpy())
 
      
 

@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
 
     files_ds = tf.data.Dataset.from_tensor_slices(channel_paths)
-    lines_ds = files_ds.interleave(tf.data.TextLineDataset, cycle_length=3)
+    lines_ds = files_ds.interleave(tf.data.TextLineDataset, cycle_length=20)
 
     for i, line in enumerate(lines_ds.take(9)):
       if i % 3 == 0:

@@ -14,7 +14,7 @@ def parse_fn(line):
   defs = [0.] * n_inputs + [tf.constant([], dtype=tf.float32)]
   fields = tf.io.decode_csv(line, record_defaults=defs)
   x = tf.stack(fields[14])
-  print(x.values)
+  print(x.value)
   return x
 
 

@@ -14,23 +14,19 @@ def parse_fn(filename):
 if __name__ == "__main__":
     path = os.path.join(os.environ["DATASETS"], "youtube_right")
     channels = list(os.listdir(path))
-    print(channels)
-    # for channel in channels:    
-    #     channel_files = [c for c in os.listdir(path) if c.startswith(channel)]
-    #     for cf in channel_files:
-    #       parse_fn(os.path.join(path, cf))
-    # for channel in channels:
-    #   channel_files = [c for c in os.listdir(path) if c.startswith(channel)]
-    # print(channel_files)
+    channel_paths = []
+    for channel in channels:
+      channel_paths.append(os.path.join(path, channel))
+    print(channel_paths)
 
-    dataset = tf.data.Dataset.from_tensor_slices(channels)
-    dataset = dataset.interleave(lambda x: 
-      tf.data.TextLineDataset(x).map(parse_fn, num_parallel_calls=1), 
-      cycle_length=4, block_length=16) 
-    print(dataset)
-    for x in dataset:
-      print(x)
 
+    # files_ds = tf.data.Dataset.from_tensor_slices()
+    # lines_ds = files_ds.interleave(tf.data.TextLineDataset, cycle_length=3)
+
+    # for i, line in enumerate(lines_ds.take(9)):
+    # if i % 3 == 0:
+    #   print()
+    # print(line.numpy())
 
      
 

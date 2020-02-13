@@ -7,7 +7,7 @@ import pandas as pd
 
 import utils
 
-
+n_readers = 5
 def parse_fn(line): 
   fields = tf.io.decode_csv(line)
   print(fields)
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         cycle_length=n_readers)
     dataset = dataset.shuffle(5)
     dataset = dataset.map(parse_fn,num_parallel_calls=2)
-    
+
      
 
           

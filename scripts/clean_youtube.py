@@ -7,8 +7,11 @@ import pandas as pd
 
 import utils
 
+n_inputs = 16
 n_readers = 5
+
 def parse_fn(line): 
+  defs = [0.] * n_inputs + [tf.constant([], dtype=tf.float32)]
   fields = tf.io.decode_csv(line)
   print(fields)
 

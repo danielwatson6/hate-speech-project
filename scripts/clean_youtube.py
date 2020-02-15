@@ -10,6 +10,13 @@ import utils
 n_inputs = 16
 n_readers = 5
 
+default_hparams = {
+    "batch_size": 32,
+    "punctuation": True,
+    "lowercase": True,
+    "max_seq_len": None,
+    "num_examples": 1000,
+}
 
 def parse_fn(line):
     defs = [0.0] * n_inputs + [tf.constant([], dtype=tf.float32)]

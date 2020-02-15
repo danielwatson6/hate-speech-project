@@ -18,7 +18,7 @@ def get_ambiguity(save_dir, data_loader):
     # Now parse the printed values.
     ragged = []
     for line in output.split("\n"):
-        ragged.append([float(x) for x in line.split()])
+        ragged.append([float(x) for x in line.split(", ")])
     return ragged
 
 

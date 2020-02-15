@@ -19,7 +19,6 @@ def get_ambiguity(save_dir, data_loader):
     # TODO: get this outta here
     if not save_dir.startswith("wordnet"):
         command += " --vocab_path=data/wikitext-2/wiki.vocab.tsv"
-    print(command)
 
     proc = subprocess.Popen(command.split(), stdout=subprocess.PIPE,)
     output = proc.communicate()[0].decode("utf8")
@@ -40,6 +39,10 @@ def plot_comparison(x1, x2, xlabel="", ylabel=""):
     plt.plot(x1, x2, "o", color="black", markersize=2)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
+
+    if not os.path.exists("plots"):
+        os.makedirs("plots")
+
     plt.savefig(os.path.join("plots", f"{xlabel}_vs_{ylabel}.png"))
 
 
@@ -60,10 +63,11 @@ if __name__ == "__main__":
 
     axis_labels = ["wordnet"] + save_dirs
 
+    # If the ambiguity data loader is passed, there is a CSV associated to this data
+    # loader that also includes human annotations for a certain word in each sentence.
+    # This will then also produce plots comparing each of the models to the human scores.
     if data_loader == "ambiguity":
-        # ambiguity for language model and wordnet, ambiguities array 3D, per word at inner most level, per sentence, outermost level is the language model
         df = pd.read_csv(os.path.join("data", "ambiguity.clean.csv"))
-        model_length = df.shape[0]
 
         human_ambiguities = []
         for i, sequence in df.iterrows():
@@ -74,7 +78,7 @@ if __name__ == "__main__":
         model_ambiguities = []
         for i, model in enumerate(ambiguities):
             model_ambiguities.append([])
-            for j, sentence in enumerate(model[:model_length]):
+            for j, sentence in enumerate(model[: df.shape[0]]):
                 index = df.iloc[j]["index"]
                 ambiguity = sentence[index]
                 model_ambiguities[i].append(ambiguity)
@@ -88,6 +92,8 @@ if __name__ == "__main__":
             x1 = [x for sentence in x1 for x in sentence]
             x2 = [x for sentence in x2 for x in sentence]
 
-            print(i, j)
+            # Wordnet will give a score of 0 for OOV words; drop them.
+            if axis_labels[i] == "wordnet":
+                x1, x2 = list(zip(*[(p, q) for p, q in zip(x1, x2) if p != 0]))
 
             plot_comparison(x1, x2, xlabel=axis_labels[i], ylabel=axis_labels[j])

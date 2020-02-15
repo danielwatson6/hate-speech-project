@@ -42,6 +42,9 @@ class Ambiguity(tfbp.DataLoader):
         if self.hparams.num_examples:
             dataset = dataset.take(self.hparams.num_examples)
         
+        for x in dataset:
+            print(x)
+            
         dataset = dataset.batch(self.hparams.batch_size)
         dataset = dataset.map(self._dict_to_tensor)
         return dataset.prefetch(1)

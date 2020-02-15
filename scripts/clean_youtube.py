@@ -35,8 +35,8 @@ if __name__ == "__main__":
         cycle_length=n_readers)
     dataset = dataset.shuffle(5)
     print(dataset)
-    # for x in dataset:
-    #   print(x)
+    for x in dataset:
+      print(x)
     
     # dataset = dataset.map(parse_fn,num_parallel_calls=2)
 

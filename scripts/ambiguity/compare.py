@@ -27,9 +27,7 @@ def plot_comparison(x1, x2, xlabel="", ylabel=""):
     scc = spearmanr(x1, x2)
 
     plt.title(
-        "Ambiguities (pcc={:.4f} (p={:.4f}) scc={:.4f} (p={:.4f}))".format(
-            *(pcc + scc)
-        )
+        "Ambiguities (pcc={:.4f} (p={:.4f}) scc={:.4f} (p={:.4f}))".format(*(pcc + scc))
     )
     plt.plot(x1, x2, "o", color="black", markersize=2)
     plt.xlabel(xlabel)
@@ -73,7 +71,7 @@ if __name__ == "__main__":
                 model_ambiguities[i].append(ambiguity)
 
         for mambg, ylabel in zip(model_ambiguities, axis_labels):
-            plot_comparison(human_ambiguities, mambg, xlabel="human", ylabel=ylabel output_path=None)
+            plot_comparison(human_ambiguities, mambg, xlabel="human", ylabel=ylabel)
 
     # Correlation plots between all the distinct pairs of models.
     for i, x1 in enumerate(ambiguities):
@@ -81,4 +79,4 @@ if __name__ == "__main__":
             x1 = [x for sentence in x1 for x in sentence]
             x2 = [x for sentence in x2 for x in sentence]
 
-            plot_comparison(x1, x2, xlabel=axis_labels[i], ylabel=axis_labels[j], output_path=None)
+            plot_comparison(x1, x2, xlabel=axis_labels[i], ylabel=axis_labels[j])

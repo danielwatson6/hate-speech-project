@@ -15,6 +15,7 @@ class Ambiguity(tfbp.DataLoader):
         "batch_size": 32,
         "punctuation": True,
         "lowercase": True,
+        "max_seq_len": None,  # this is needed to run a script.
     }
 
     def call(self):

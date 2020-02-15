@@ -13,7 +13,6 @@ class AmbiguityWordnet(tfbp.Model):
     @tfbp.runnable
     def ambiguity(self, data_loader):
         dataset = data_loader()
-        print(dataset, data_loader)
         for batch in dataset:
             for seq in batch.numpy():
                 scores = []

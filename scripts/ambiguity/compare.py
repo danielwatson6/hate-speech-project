@@ -14,7 +14,7 @@ def get_ambiguity(save_dir, data_loader):
         f"python run.py ambiguity {save_dir} {data_loader} --max_seq_len=0".split(),
         stdout=subprocess.PIPE,
     )
-    output = proc.communicate()[0]
+    output = proc.communicate()[0].decode("utf8")
     # Now parse the printed values.
     ragged = []
     for line in output.split("\n"):

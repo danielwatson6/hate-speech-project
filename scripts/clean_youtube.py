@@ -25,7 +25,7 @@ if __name__ == "__main__":
     for channel in channels:
       channel_paths.append(os.path.join(path, channel))
 
-    filepath_dataset = tf.data.Dataset.list_files(channel_path)
+    filepath_dataset = tf.data.Dataset.list_files(channel_paths)
     print(filepath_dataset)
     for x in filepath_dataset:
       print(x)

@@ -40,12 +40,12 @@ if __name__ == "__main__":
         channel_paths.append(os.path.join(path, channel))
 
     filepath_dataset = tf.data.Dataset.list_files(channel_paths, shuffle=False)
-
+    
     dataset = filepath_dataset.interleave(
         make_csv_dataset,
         cycle_length=32,
-        block_length=20,
+        block_length=5,
     )
-    
+
     for x in dataset:
         print(x)

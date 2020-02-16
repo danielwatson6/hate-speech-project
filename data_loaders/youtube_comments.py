@@ -13,7 +13,7 @@ num_files = 119
 
 def make_csv_dataset(path):
     return tf.data.experimental.make_csv_dataset(
-        path, 1, num_epochs=1, shuffle=False, select_columns=14
+        path, 1, num_epochs=1, shuffle=False, select_columns=['content']
     )
 
 
@@ -34,19 +34,15 @@ class YouTube(tfbp.DataLoader):
         for channel in channels:
             channel_paths.append(os.path.join(path, channel))
 
-        filepath_dataset = tf.data.Dataset.list_files(channel_paths, shuffle=False)
+        filepath_dataset = make_csv_dataset(channel_paths)
 
         dataset = filepath_dataset.interleave(
-            make_csv_dataset,
             cycle_length=default_hparams.batch_size,
             block_length=num_files,
         )
 
         if self.hparams.num_examples:
             dataset = dataset.take(self.hparams.num_examples)
-
-        for x in dataset:
-            print(x)
 
         dataset = dataset.batch(self.hparams.batch_size)
         dataset = dataset.map(self._dict_to_tensor)

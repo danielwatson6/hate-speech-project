@@ -43,8 +43,8 @@ if __name__ == "__main__":
 
     dataset = filepath_dataset.interleave(
         make_csv_dataset,
-        cycle_length=default_hparams.batch_size,
-        block_length=num_files,
+        cycle_length=32,
+        block_length=119
     )
 
     for x in dataset:

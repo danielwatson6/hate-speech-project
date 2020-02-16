@@ -28,7 +28,7 @@ def parse_fn(line):
 
 def make_csv_dataset(path):
     return tf.data.experimental.make_csv_dataset(
-        path, 1, num_epochs=1, shuffle=False, select_columns=14
+        path, 1, num_epochs=1, shuffle=False, select_columns=['comments']
     )
 
 

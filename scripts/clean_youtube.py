@@ -44,7 +44,7 @@ if __name__ == "__main__":
     dataset = filepath_dataset.interleave(
         make_csv_dataset,
         cycle_length=32,
-        block_length=119,
+        block_length=119
     )
 
     for x in dataset:

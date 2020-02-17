@@ -61,9 +61,11 @@ if __name__ == "__main__":
     #     print(x)
 
     dataset = filepath_dataset.interleave(cycle_length=32, block_length=119,)
+    # for x in dataset:
+    #     print(x)
 
     dataset = dataset.batch(32)
     dataset = dataset.map(_dict_to_tensor(dataset))
 
-    for x in dataset:
-        print(x)
+    # for x in dataset:
+    #     print(x)

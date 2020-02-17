@@ -56,9 +56,10 @@ if __name__ == "__main__":
     #filepath_dataset = tf.data.Dataset.list_files(channel_paths, shuffle=False)
 
     filepath_dataset = make_csv_dataset(channel_paths)
-  
-    for x in filepath_dataset:
-        print(x['content'])
+    dataset = dataset.map(lambda x : x["content"])
+    for x in dataset:
+        print(x)
+    
     
     # dataset = filepath_dataset.interleave(
     #     lambda x: tf.data.TextLineDataset(x).map(

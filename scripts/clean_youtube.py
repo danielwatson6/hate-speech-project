@@ -18,12 +18,8 @@ default_hparams = {
     "num_examples": 1000,
 }
 
-def parse_fn(line):
-    defs = [0.0] * n_inputs + [tf.constant([], dtype=tf.float32)]
-    fields = tf.io.decode_csv(line, record_defaults=defs)
-    x = tf.stack(fields[14])
-    tf.print(x)
-    return x
+def parse_fn(filename): 
+  return tf.data.Dataset.range(10000) 
 
 
 def make_csv_dataset(path):
@@ -57,12 +53,14 @@ if __name__ == "__main__":
     # filepath_dataset = tf.data.Dataset.list_files(channel_paths, shuffle=False)
 
     filepath_dataset = make_csv_dataset(channel_paths)
-    for x in filepath_dataset:
-        print(x)
-
-    dataset = filepath_dataset.interleave(cycle_length=32, block_length=119,)
-    # for x in dataset:
+    # for x in filepath_dataset:
     #     print(x)
+
+    dataset = filepath_dataset.interleave(lambda x: 
+        tf.data.TextLineDataset(x).map(parse_fn, num_parallel_calls=1), 
+        cycle_length=32, block_length=119) 
+    for x in dataset:
+        print(x)
 
     dataset = dataset.batch(32)
     dataset = dataset.map(_dict_to_tensor(dataset))

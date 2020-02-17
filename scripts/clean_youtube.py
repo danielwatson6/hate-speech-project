@@ -19,8 +19,8 @@ default_hparams = {
 }
 
 
-def parse_fn(dataset):
-    return dataset.take(10000)
+def parse_fn():
+    return None
 
 
 def make_csv_dataset(path):

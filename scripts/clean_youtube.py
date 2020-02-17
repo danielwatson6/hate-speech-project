@@ -57,7 +57,7 @@ if __name__ == "__main__":
     # #     print(x)
 
     dataset = filepath_dataset.interleave(
-        make_csv_dataset,  
+        lambda x: make_csv_dataset(x),  
         cycle_length=32, 
         block_length=119,) 
     

@@ -20,7 +20,7 @@ default_hparams = {
 
 
 def parse_fn(dataset):
-    return None
+    return dataset
 
 
 def make_csv_dataset(path):

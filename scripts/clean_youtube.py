@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     
     dataset = filepath_dataset.interleave(
-        lambda x : filepath_dataset(x).map(lambda x : x["content"]),
+        lambda filepath: tf.data.TextLineDataset(filepath),
         cycle_length=32,
         block_length=119,
     )

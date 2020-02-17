@@ -24,7 +24,7 @@ class YouTube(tfbp.DataLoader):
         "punctuation": True,
         "lowercase": True,
         "max_seq_len": None,
-        "num_examples": 1000,
+        "num_examples": 10000,
     }
 
     def call(self):
@@ -37,19 +37,19 @@ class YouTube(tfbp.DataLoader):
         filepath_dataset = make_csv_dataset(channel_paths)
 
         dataset = filepath_dataset.interleave(
-            cycle_length=default_hparams.batch_size,
-            block_length=num_files,
+            cycle_length=default_hparams.batch_size, #batch size of 32
+            block_length=num_files, # cur num of files is 119 
         )
 
         if self.hparams.num_examples:
             dataset = dataset.take(self.hparams.num_examples)
-
+        
         dataset = dataset.batch(self.hparams.batch_size)
         dataset = dataset.map(self._dict_to_tensor)
         return dataset.prefetch(1)
 
     def _dict_to_tensor(self, batch):
-        batch = batch["sentence"]
+        batch = batch["content"]
 
         if not self.hparams.punctuation:
             batch = tf.strings.regex_replace(batch, "[\.,;:-]", "")

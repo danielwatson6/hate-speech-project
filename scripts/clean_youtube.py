@@ -19,7 +19,7 @@ default_hparams = {
 }
 
 
-def parse_fn():
+def parse_fn(dataset):
     return None
 
 

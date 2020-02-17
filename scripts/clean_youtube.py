@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     
     dataset = filepath_dataset.interleave(
-        filepath_dataset(x).map(lambda x: x["content"]),
+        filepath_dataset.map(lambda x: x["content"]),
         cycle_length=32,
         block_length=119,
     )

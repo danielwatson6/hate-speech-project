@@ -61,10 +61,9 @@ if __name__ == "__main__":
         cycle_length=32,
         block_length=119,
     )
-    for x in dataset:
-        print(x)
-        
+
+
     dataset = dataset.batch(32)
 
-    # for x in dataset:
-    #     print(x)
+    for x in dataset:
+        print(x)

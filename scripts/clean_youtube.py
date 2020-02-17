@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     filepath_dataset = make_csv_dataset(channel_paths)
     filepath_dataset = filepath_dataset.map(lambda x : x["content"])
-    for x in dataset:
+    for x in filepath_dataset:
         print(x)
     
     

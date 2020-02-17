@@ -19,8 +19,8 @@ default_hparams = {
 }
 
 
-def parse_fn(filename):
-    return tf.data.Dataset.range(10000)
+def parse_fn(dataset):
+    return dataset.take(10000)
 
 
 def make_csv_dataset(path):
@@ -60,9 +60,7 @@ if __name__ == "__main__":
 
     
     dataset = filepath_dataset.interleave(
-        lambda x: x.map(
-            parse_fn, num_parallel_calls=1
-        ),
+        parse_fn,
         cycle_length=32,
         block_length=119,
     )

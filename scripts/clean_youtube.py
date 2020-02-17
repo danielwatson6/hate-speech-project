@@ -19,8 +19,8 @@ default_hparams = {
 }
 
 
-def parse_fn(dataset):
-    return dataset
+def parse_fn(filepath_dataset):
+    return filepath_dataset.map(lambda x : x["content"])
 
 
 def make_csv_dataset(path):
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     
     dataset = filepath_dataset.interleave(
-        lambda x : x["content"],
+        parse_fn,
         cycle_length=32,
         block_length=119,
     )

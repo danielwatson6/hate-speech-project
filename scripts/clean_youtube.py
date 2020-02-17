@@ -51,15 +51,15 @@ if __name__ == "__main__":
     for channel in channels:
         channel_paths.append(os.path.join(path, channel))
 
-    filepath_dataset = tf.data.Dataset.list_files(channel_paths, shuffle=False)
+    #filepath_dataset = tf.data.Dataset.list_files(channel_paths, shuffle=False)
 
-    # filepath_dataset = make_csv_dataset(channel_paths)
+    filepath_dataset = make_csv_dataset(channel_paths)
     # for x in filepath_dataset:
     #     print(x)
     # print(type(filepath_dataset))
 
     dataset = filepath_dataset.interleave(
-        lambda x: filepath_dataset(x).map(
+        lambda x: tf.data.TextLineDataset(x).map(
             make_csv_dataset, num_parallel_calls=1
         ),
         cycle_length=32,

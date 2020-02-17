@@ -32,7 +32,6 @@ def make_csv_dataset(path):
 #     return item['content']
 
 def _dict_to_tensor(batch):
-    batch = batch["content"]
 
     # if not self.hparams.punctuation:
     #     batch = tf.strings.regex_replace(batch, "[\.,;:-]", "")
@@ -42,7 +41,6 @@ def _dict_to_tensor(batch):
     batch = tf.strings.split(batch).to_tensor(default_value="<pad>")
     # if self.hparams.max_seq_len:
     #     batch = batch[:, self.hparams.max_seq_len]
-    print(batch)
     return batch
 
 
@@ -63,12 +61,10 @@ if __name__ == "__main__":
         cycle_length=32,
         block_length=119,
     )
-
-    dataset = dataset.batch(32)
     for x in dataset:
         print(x)
-    
-    # dataset = dataset.map(_dict_to_tensor(dataset))
+        
+    dataset = dataset.batch(32)
 
     # for x in dataset:
     #     print(x)

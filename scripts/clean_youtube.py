@@ -53,9 +53,9 @@ if __name__ == "__main__":
     filepath_dataset = tf.data.Dataset.list_files(channel_paths, shuffle=False)
 
     # filepath_dataset = make_csv_dataset(channel_paths)
-    # for x in filepath_dataset:
-    #     print(x)
-    print(type(filepath_dataset))
+    for x in filepath_dataset:
+        print(x)
+    # print(type(filepath_dataset))
     
     # dataset = filepath_dataset.interleave(
     #     lambd(make_csv_dataset, x),  

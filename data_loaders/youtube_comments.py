@@ -29,8 +29,8 @@ class YouTube(tfbp.DataLoader):
 
     def call(self):
         if self.method == "fit":
-            train_dataset = self._make_dataset("wiki.train.clean", shuffle=10000)
-            valid_dataset = self._make_dataset("wiki.valid.clean", shuffle=10000)
+            train_dataset = self._make_dataset("yt.train", shuffle=False)
+            valid_dataset = self._make_dataset("yt.valid", shuffle=False)
             return train_dataset, valid_dataset
 
 

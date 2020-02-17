@@ -28,8 +28,9 @@ def parse_fn(line):
 
 def make_csv_dataset(path):
     return tf.data.experimental.make_csv_dataset(
-        path, 1, num_epochs=1, shuffle=False, select_columns=['content']
+        path, 1, num_epochs=1, shuffle=False, select_columns=["content"]
     )
+
 
 def _dict_to_tensor(batch):
     batch = batch["content"]
@@ -45,6 +46,7 @@ def _dict_to_tensor(batch):
     print(batch)
     return batch
 
+
 if __name__ == "__main__":
     path = os.path.join(os.environ["DATASETS"], "youtube_right")
     channels = list(os.listdir(path))
@@ -53,18 +55,15 @@ if __name__ == "__main__":
         channel_paths.append(os.path.join(path, channel))
 
     # filepath_dataset = tf.data.Dataset.list_files(channel_paths, shuffle=False)
-    
-    filepath_dataset = make_csv_dataset(channel_paths)
-    for x in filepath_dataset:
-        print(x)
 
-    dataset = filepath_dataset.interleave(
-        cycle_length=32,
-        block_length=119,
-    )
+    filepath_dataset = make_csv_dataset(channel_paths)
+    # for x in filepath_dataset:
+    #     print(x)
+
+    dataset = filepath_dataset.interleave(cycle_length=32, block_length=119,)
 
     dataset = dataset.batch(32)
     dataset = dataset.map(_dict_to_tensor)
 
-    # for x in dataset:
-    #     print(x)
+    for x in dataset:
+        print(x)

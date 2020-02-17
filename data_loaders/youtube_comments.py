@@ -28,6 +28,27 @@ class YouTube(tfbp.DataLoader):
     }
 
     def call(self):
+        if self.method == "fit":
+            train_dataset = self._make_dataset("wiki.train.clean", shuffle=10000)
+            valid_dataset = self._make_dataset("wiki.valid.clean", shuffle=10000)
+            return train_dataset, valid_dataset
+
+
+
+    def _preprocess(self, batch):
+        if not self.hparams.punctuation:
+            batch = tf.strings.regex_replace(batch, "[\.,;:-]", "")
+        if self.hparams.lowercase:
+            batch = tf.strings.lower(batch)
+
+        # No need to shrink spaces, this is handled correctly by `tf.strings.split`.
+        # padded = tf.strings.split(batch).to_tensor(default_value="<pad>")
+
+        if self.hparams.max_seq_len:
+            padded = padded[:, : self.hparams.max_seq_len]
+        return padded
+
+    def _make_dataset(self, filename, shuffle=None):
         path = os.path.join(os.environ["DATASETS"], "youtube_right")
         channels = list(os.listdir(path))
         channel_paths = []
@@ -51,15 +72,3 @@ class YouTube(tfbp.DataLoader):
         dataset = dataset.batch(self.hparams.batch_size)
         return dataset.prefetch(1)
 
-    def _dict_to_tensor(self, batch):
-        batch = batch["content"]
-
-        if not self.hparams.punctuation:
-            batch = tf.strings.regex_replace(batch, "[\.,;:-]", "")
-        if self.hparams.lowercase:
-            batch = tf.strings.lower(batch)
-
-        batch = tf.strings.split(batch).to_tensor(default_value="<pad>")
-        if self.hparams.max_seq_len:
-            batch = batch[:, self.hparams.max_seq_len]
-        return batch

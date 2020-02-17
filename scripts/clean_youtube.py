@@ -64,10 +64,10 @@ if __name__ == "__main__":
         block_length=119,
     )
 
+    dataset = dataset.batch(32)
     for x in dataset:
         print(x)
-
-    # dataset = dataset.batch(32)
+    
     # dataset = dataset.map(_dict_to_tensor(dataset))
 
     # for x in dataset:

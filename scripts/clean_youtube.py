@@ -57,20 +57,18 @@ if __name__ == "__main__":
 
     filepath_dataset = make_csv_dataset(channel_paths)
     filepath_dataset = filepath_dataset.map(lambda x : x["content"])
-    for x in filepath_dataset:
-        print(x)
-    
-    
-    # dataset = filepath_dataset.interleave(
-    #     lambda x: tf.data.TextLineDataset(x).map(
-    #         parse_fn, num_parallel_calls=1
-    #     ),
-    #     cycle_length=32,
-    #     block_length=119,
-    # )
 
-    # for x in dataset:
-    #     print(x)
+    
+    dataset = filepath_dataset.interleave(
+        lambda x: tf.data.TextLineDataset(x).map(
+            parse_fn, num_parallel_calls=1
+        ),
+        cycle_length=32,
+        block_length=119,
+    )
+
+    for x in dataset:
+        print(x)
 
     # dataset = dataset.batch(32)
     # dataset = dataset.map(_dict_to_tensor(dataset))

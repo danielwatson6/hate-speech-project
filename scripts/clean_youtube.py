@@ -56,10 +56,11 @@ if __name__ == "__main__":
     #filepath_dataset = tf.data.Dataset.list_files(channel_paths, shuffle=False)
 
     filepath_dataset = make_csv_dataset(channel_paths)
-    filepath_dataset = filepath_dataset.map(lambda x : x["content"])
+    # filepath_dataset = filepath_dataset.map(lambda x : x["content"])
 
     
     dataset = filepath_dataset.interleave(
+        filepath_dataset.map(lambda x: x["content"])
         cycle_length=32,
         block_length=119,
     )

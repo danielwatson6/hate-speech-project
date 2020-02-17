@@ -59,7 +59,7 @@ if __name__ == "__main__":
     # for x in filepath_dataset:
     #     print(x)
     # print(type(filepath_dataset))
-    dataset = dataset.filter(filter_fn)
+    dataset = filepath_dataset.filter(filter_fn)
     for x in dataset:
         print(x)
     

@@ -33,8 +33,6 @@ class YouTube(tfbp.DataLoader):
             valid_dataset = self._make_dataset("yt.valid", shuffle=False)
             return train_dataset, valid_dataset
 
-
-
     def _preprocess(self, batch):
         if not self.hparams.punctuation:
             batch = tf.strings.regex_replace(batch, "[\.,;:-]", "")

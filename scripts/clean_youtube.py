@@ -19,8 +19,8 @@ default_hparams = {
 }
 
 
-def parse_fn(filepath_dataset):
-    return filepath_dataset.map(lambda x : x["content"])
+def parse_fn(x):
+    return x["content"])
 
 
 def make_csv_dataset(path):

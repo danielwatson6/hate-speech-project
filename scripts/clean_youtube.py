@@ -42,6 +42,7 @@ def _dict_to_tensor(batch):
     batch = tf.strings.split(batch).to_tensor(default_value="<pad>")
     # if self.hparams.max_seq_len:
     #     batch = batch[:, self.hparams.max_seq_len]
+    print(batch)
     return batch
 
 if __name__ == "__main__":
@@ -65,5 +66,5 @@ if __name__ == "__main__":
     dataset = dataset.batch(32)
     dataset = dataset.map(_dict_to_tensor)
 
-    for x in dataset:
-        print(x)
+    # for x in dataset:
+    #     print(x)

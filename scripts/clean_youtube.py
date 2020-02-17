@@ -59,7 +59,7 @@ if __name__ == "__main__":
     # print(type(filepath_dataset))
 
     dataset = filepath_dataset.interleave(
-        lambda x: tf.data.Dataset(x).map_fn(
+        lambda x: tf.data.Dataset(x).map(
             make_csv_dataset, num_parallel_calls=1
         ),
         cycle_length=32,

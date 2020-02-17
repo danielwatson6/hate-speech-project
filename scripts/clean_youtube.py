@@ -18,8 +18,9 @@ default_hparams = {
     "num_examples": 1000,
 }
 
-def parse_fn(filename): 
-  return tf.data.Dataset.range(10000) 
+
+def parse_fn(filename):
+    return tf.data.Dataset.range(10000)
 
 
 def make_csv_dataset(path):
@@ -53,15 +54,18 @@ if __name__ == "__main__":
     filepath_dataset = tf.data.Dataset.list_files(channel_paths, shuffle=False)
 
     # filepath_dataset = make_csv_dataset(channel_paths)
-    for x in filepath_dataset:
-        print(x)
+    # for x in filepath_dataset:
+    #     print(x)
     # print(type(filepath_dataset))
-    
-    # dataset = filepath_dataset.interleave(
-    #     lambd(make_csv_dataset, x),  
-    #     cycle_length=32, 
-    #     block_length=119,) 
-    
+
+    dataset = filepath_dataset.interleave(
+        lambda x: tf.data.TextLineDataset(x).map(
+            make_csv_dataset, num_parallel_calls=1
+        ),
+        cycle_length=32,
+        block_length=119,
+    )
+
     # for x in dataset:
     #     print(x)
 

@@ -77,7 +77,7 @@ class LM(tfbp.Model):
 
     @tfbp.runnable
     def fit(self, data_loader):
-        opt = tf.optimizers.Adam(self.hparams.learning_rate)
+        opt = tf.optimizers.Adam(self.hparams.learning_rate, clipnorm)
 
         # Train/validation split.
         train_dataset, valid_dataset = data_loader()

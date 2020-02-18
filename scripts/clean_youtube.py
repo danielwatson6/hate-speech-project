@@ -2,6 +2,7 @@ import os
 import random
 import re
 import tensorflow as tf
+import tensorflow_transform as tft
 import numpy as np
 import pandas as pd
 
@@ -62,8 +63,16 @@ if __name__ == "__main__":
         block_length=119,
     )
 
+    vocab_path =  os.path.join("data", "youtube_new", "yt.vocab.tsv")
+    vocab = tft.vocabulary(
+        dataset,
+        top_k = 10000,
+        vocab_filename = vocab_path,
+        store_frequency = True,
+    )
+    print(vocab)
 
-    dataset = dataset.batch(32)
+    # dataset = dataset.batch(32)
 
-    for x in dataset:
-        print(x)
+    # for x in dataset:
+    #     print(x)

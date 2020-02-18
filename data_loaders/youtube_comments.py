@@ -6,6 +6,7 @@ import os
 import pandas as pd
 import tensorflow as tf
 
+
 import boilerplate as tfbp
 
 num_files = 119

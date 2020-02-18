@@ -33,4 +33,4 @@ def save_or_load_embeds(embeds_path, vocab_path, vocab_size):
 
         np.save(embeds_path, embedding_matrix)
 
-    return embedding_matrix
+    return embedding_matrix[:vocab_size]

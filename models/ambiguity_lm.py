@@ -113,10 +113,10 @@ class LM(tfbp.Model):
                     flush=True,
                 )
 
-                    with train_writer.as_default():
-                        tf.summary.scalar("loss", train_loss, step=step)
-                    with valid_writer.as_default():
-                        tf.summary.scalar("loss", valid_loss, step=step)
+                with train_writer.as_default():
+                    tf.summary.scalar("loss", train_loss, step=step)
+                with valid_writer.as_default():
+                    tf.summary.scalar("loss", valid_loss, step=step)
 
                 self.step.assign_add(1)
 

@@ -22,7 +22,7 @@ class LM(tfbp.Model):
         "learning_rate": 1e-3,
         "epochs": 10,
         "max_grad_norm":1.0,
-        "max_grad":10.0
+        "max_grad":10.0,
         # TODO: find a way to make the model not use this. The hash tables for word<->id
         # conversion are immutable and cannot be overwritten as we do with the embedding
         # matrix.

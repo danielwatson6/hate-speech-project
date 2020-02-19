@@ -50,7 +50,7 @@ class LM(tfbp.Model):
         else:
             RNN = tfkl.GRU
 
-        #dropout = 0.0
+        dropout = 0.0
         if self.method == "train":
             dropout = self.hparams.dropout
 

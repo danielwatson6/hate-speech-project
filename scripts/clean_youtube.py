@@ -1,3 +1,8 @@
+'''
+This script is used solely to test things out with the Youtube Dataset
+'''
+
+
 import os
 import random
 import re

@@ -21,7 +21,7 @@ class LM(tfbp.Model):
         "use_lstm": True,  # GRU will be used if set to false.
         "learning_rate": 1e-3,
         "epochs": 10,
-        "max_grad_norm":10.0,
+        "max_grad_norm":1.0,
         # TODO: find a way to make the model not use this. The hash tables for word<->id
         # conversion are immutable and cannot be overwritten as we do with the embedding
         # matrix.
@@ -78,7 +78,7 @@ class LM(tfbp.Model):
 
     @tfbp.runnable
     def fit(self, data_loader):
-        opt = tf.optimizers.Adam(self.hparams.learning_rate, clipvalue=self.hparams.max_grad_norm)
+        opt = tf.optimizers.Adam(self.hparams.learning_rate, clipnorm=self.hparams.max_grad_norm)
 
         # Train/validation split.
         train_dataset, valid_dataset = data_loader()

@@ -21,8 +21,8 @@ class LM(tfbp.Model):
         "use_lstm": True,  # GRU will be used if set to false.
         "learning_rate": 1e-3,
         "epochs": 10,
-        "max_grad_norm":1.0,
-        "max_grad":0.0,
+        "max_grad_norm":0.0,
+        "max_grad":10.0,
         # TODO: find a way to make the model not use this. The hash tables for word<->id
         # conversion are immutable and cannot be overwritten as we do with the embedding
         # matrix.
@@ -103,20 +103,20 @@ class LM(tfbp.Model):
                 opt.apply_gradients(zip(grads, self.trainable_weights))
 
                 step = self.step.numpy()
-                # if step % 100 == 0:
-                valid_batch = next(valid_dataset_infinite)
-                valid_loss = tf.reduce_mean(self.loss(valid_batch))
-                print(
-                    "Step {} (train_loss={:.4f} valid_loss={:.4f})".format(
-                        step, train_loss, valid_loss
-                    ),
-                    flush=True,
-                )
+                if step % 100 == 0:
+                    valid_batch = next(valid_dataset_infinite)
+                    valid_loss = tf.reduce_mean(self.loss(valid_batch))
+                    print(
+                        "Step {} (train_loss={:.4f} valid_loss={:.4f})".format(
+                            step, train_loss, valid_loss
+                        ),
+                        flush=True,
+                    )
 
-                with train_writer.as_default():
-                    tf.summary.scalar("loss", train_loss, step=step)
-                with valid_writer.as_default():
-                    tf.summary.scalar("loss", valid_loss, step=step)
+                    with train_writer.as_default():
+                        tf.summary.scalar("loss", train_loss, step=step)
+                    with valid_writer.as_default():
+                        tf.summary.scalar("loss", valid_loss, step=step)
 
                 self.step.assign_add(1)
 

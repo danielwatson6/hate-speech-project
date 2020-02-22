@@ -61,7 +61,7 @@ class YouTube(tfbp.DataLoader):
     
         dataset = filepath_dataset.interleave(
             lambda string_tensor: tf.data.Dataset.from_tensor_slices(string_tensor),
-            cycle_length=self.default_hparams.batch_size,
+            cycle_length=32,
             block_length=num_files,
         )
         

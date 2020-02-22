@@ -61,6 +61,7 @@ if __name__ == "__main__":
     filepath_dataset = make_csv_dataset(channel_paths)
     filepath_dataset = filepath_dataset.map(lambda x : x["content"])
 
+    vocab_path =  os.path.join("data", "youtube_new", "yt.vocab.tsv")
     vocab = tft.vocabulary(
         filepath_dataset,
         top_k = 10000,
@@ -75,7 +76,7 @@ if __name__ == "__main__":
     #     block_length=119,
     # )
 
-    # vocab_path =  os.path.join("data", "youtube_new", "yt.vocab.tsv")
+
     
 
     # dataset = dataset.batch(32)

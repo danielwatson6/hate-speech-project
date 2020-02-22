@@ -61,7 +61,7 @@ class YouTube(tfbp.DataLoader):
     
         dataset = filepath_dataset.interleave(
             lambda string_tensor: tf.data.Dataset.from_tensor_slices(string_tensor),
-            cycle_length=hparams.batch_size,
+            cycle_length=self.default_hparams.batch_size,
             block_length=num_files,
         )
         
@@ -74,3 +74,7 @@ class YouTube(tfbp.DataLoader):
         )
         return dataset.prefetch(1)
 
+
+    #for now, we'll generate a .TSV for each generated dataset. Not ideal at all
+    def _generate_vocab_file(self, dataset):
+        ...

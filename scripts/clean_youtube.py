@@ -61,21 +61,22 @@ if __name__ == "__main__":
     filepath_dataset = make_csv_dataset(channel_paths)
     filepath_dataset = filepath_dataset.map(lambda x : x["content"])
 
-    
-    dataset = filepath_dataset.interleave(
-        lambda string_tensor: tf.data.Dataset.from_tensor_slices(string_tensor),
-        cycle_length=32,
-        block_length=119,
-    )
-
-    vocab_path =  os.path.join("data", "youtube_new", "yt.vocab.tsv")
     vocab = tft.vocabulary(
-        dataset,
+        filepath_dataset,
         top_k = 10000,
         vocab_filename = vocab_path,
         store_frequency = True,
     )
     print(vocab)
+
+    # dataset = filepath_dataset.interleave(
+    #     lambda string_tensor: tf.data.Dataset.from_tensor_slices(string_tensor),
+    #     cycle_length=32,
+    #     block_length=119,
+    # )
+
+    # vocab_path =  os.path.join("data", "youtube_new", "yt.vocab.tsv")
+    
 
     # dataset = dataset.batch(32)
 

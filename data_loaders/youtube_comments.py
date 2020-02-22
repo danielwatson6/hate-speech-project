@@ -69,5 +69,8 @@ class YouTube(tfbp.DataLoader):
             dataset = dataset.take(self.hparams.num_examples)
 
         dataset = dataset.batch(self.hparams.batch_size)
+        dataset = dataset.map(
+            self._preprocess, num_parallel_calls=tf.data.experimental.AUTOTUNE
+        )
         return dataset.prefetch(1)
 

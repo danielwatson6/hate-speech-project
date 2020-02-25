@@ -20,7 +20,7 @@ def get_ambiguity(save_dir, data_loader):
     if not save_dir.startswith("wordnet"):
         command += " --vocab_path=data/wikitext-2/wiki.vocab.tsv"
 
-    proc = subprocess.Popen(command.split(), stdout=subprocess.PIPE,)
+    proc = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
     output = proc.communicate()[0].decode("utf8")
     # Now parse the printed values.
     ragged = []
@@ -29,7 +29,7 @@ def get_ambiguity(save_dir, data_loader):
     return ragged
 
 
-def plot_comparison(x1, x2, xlabel="", ylabel=""):
+def plot_comparison(x1, x2, xlabel="", ylabel="", path=None):
     pcc = pearsonr(x1, x2)
     scc = spearmanr(x1, x2)
 
@@ -43,7 +43,10 @@ def plot_comparison(x1, x2, xlabel="", ylabel=""):
     if not os.path.exists("plots"):
         os.makedirs("plots")
 
-    plt.savefig(os.path.join("plots", f"{xlabel}_vs_{ylabel}.png"))
+    if path is None:
+        path = f"{xlabel}_vs_{ylabel}.png"
+    plt.savefig(os.path.join("plots", path))
+    plt.clf()
 
 
 if __name__ == "__main__":
@@ -83,8 +86,44 @@ if __name__ == "__main__":
                 ambiguity = sentence[index]
                 model_ambiguities[i].append(ambiguity)
 
+        for mambg1, mambg2 in zip(model_ambiguities[0], model_ambiguities[1]):
+            print(mambg1, mambg2)
+
+        # plt.plot(human_ambiguities, model_ambiguities[0], "o", color="r", markersize=1)
+        # plt.plot(human_ambiguities, model_ambiguities[1], "o", color="b", markersize=1)
+        # plt.show()
+
+        # plot_comparison(
+        #     human_ambiguities,
+        #     model_ambiguities[0],
+        #     xlabel="human",
+        #     ylabel=axis_labels[0],
+        # )
+        # plot_comparison(
+        #     human_ambiguities,
+        #     model_ambiguities[1],
+        #     xlabel="human",
+        #     ylabel=axis_labels[1],
+        # )
+
         for mambg, ylabel in zip(model_ambiguities, axis_labels):
-            plot_comparison(human_ambiguities, mambg, xlabel="human", ylabel=ylabel)
+            plot_comparison(
+                human_ambiguities,
+                mambg,
+                xlabel="human",
+                ylabel=ylabel,
+                path=f"human_{ylabel}_termonly.png",
+            )
+
+        for i, mambg1 in enumerate(model_ambiguities):
+            for j, mambg2 in enumerate(model_ambiguities[i + 1 :], i + 1):
+                plot_comparison(
+                    mambg1,
+                    mambg2,
+                    xlabel=axis_labels[i],
+                    ylabel=axis_labels[j],
+                    path=f"{axis_labels[i]}_{axis_labels[j]}_termonly.png",
+                )
 
     # Correlation plots between all the distinct pairs of models.
     for i, x1 in enumerate(ambiguities):

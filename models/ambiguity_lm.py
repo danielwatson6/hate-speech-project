@@ -125,11 +125,13 @@ class LM(tfbp.Model):
     @tfbp.runnable
     def ambiguity(self, data_loader):
         for x in data_loader():
-            probs = self(x)
+            probs = self(x[:, :-1])
             # nlog_probs = -tf.math.log(probs + 1e-8)
             nlog_probs = -tf.math.log(probs)
             nplogp = probs * nlog_probs
-            entropy = tf.reduce_sum(nplogp, axis=2).numpy()
+
+            mask = tf.cast(tf.not_equal(self.word_to_id(x[:, 1:]), 0), tf.float32)
+            entropy = tf.reduce_sum(nplogp, axis=2).numpy() * mask
             # for loop to iterate and test
             for sequence in entropy:
                 print(", ".join(["{:.4f}".format(y) for y in sequence]))

@@ -72,9 +72,11 @@ class LM(tfbp.Model):
         # Avoid punishing the model for "wrong" guesses on padded data.
         mask = tf.cast(tf.not_equal(labels, 0), tf.float32)
         masked_loss = self.cross_entropy(labels, probs) * mask
-        # Compute means by correct length.
-        print(tf.reduce_sum(mask, axis=1).numpy())
-        mean_factor = tf.math.reciprocal(tf.reduce_sum(mask, axis=1))
+        # Compute means by correct length, dropping any sequences of length 0.
+        sequence_lengths = tf.reduce_sum(mask, axis=1)
+        mean_factor = tf.map_fn(
+            lambda x: tf.cond(x == 0.0, lambda: 0.0, lambda: 1.0 / x), sequence_lengths
+        )
         return tf.reduce_sum(masked_loss, axis=1) * mean_factor
 
     @tfbp.runnable

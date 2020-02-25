@@ -58,6 +58,7 @@ if __name__ == "__main__":
                 "Warning: model saved at",
                 os.path.join("experiments", sys.argv[2]),
                 f"already points to `models.{classes['model']}`, ignoring...",
+                file=sys.stderr,
             )
             classes["data_loader"] = sys.argv[4]
             DataLoader = tfbp.get_data_loader(classes["data_loader"])

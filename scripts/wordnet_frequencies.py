@@ -17,5 +17,7 @@ if __name__ == "__main__":
         bins.append(f)
         counts.append(count)
 
+    print(max(frequencies))
+
     plt.bar(bins, counts)
     plt.show()

@@ -9,6 +9,7 @@ from data_loaders import utils
 @tfbp.default_export
 class WikiText(tfbp.DataLoader):
     default_hparams = {
+        "vocab_size": 20000,
         "batch_size": 32,
         "corpus": 2,
         "max_seq_len": 40,
@@ -30,6 +31,7 @@ class WikiText(tfbp.DataLoader):
 
         # Used by models to find the initial values of the embedding matrix, which are
         # data-dependent.
+        # TODO: what if the model doesn't need an embedding matrix? Waste of memory.
         self.embedding_matrix = utils.save_or_load_embeds(
             embeds_path, vocab_path, self.hparams.vocab_size
         )
@@ -40,17 +42,10 @@ class WikiText(tfbp.DataLoader):
             valid_dataset = self._make_dataset("wiki.valid.clean", shuffle=10000)
             return train_dataset, valid_dataset
 
-        elif self.method == "evaluate":
+        elif self.method == "eval_test":
             return self._make_dataset("wiki.test.clean")
 
-        elif self.method == "interact":
-
-            def interact_mode_generator():
-                while True:
-                    yield [input("Type a sentence: ")]
-
-            dataset = tf.data.Dataset.from_generator(interact_mode_generator, tf.string)
-            return dataset.map(self._preprocess)
+        return self._make_dataset("wiki.valid.clean")
 
     def _preprocess(self, batch):
         if not self.hparams.punctuation:

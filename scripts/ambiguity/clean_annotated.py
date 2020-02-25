@@ -9,7 +9,7 @@ import pandas as pd
 
 
 def original_data():
-    data = pd.read_csv(os.path.join("data", "ambiguity.csv"))
+    data = pd.read_csv(os.path.join("data", "annotated_ambiguity.csv"))
 
     # drop rejected rows
     index_names = data[data["rejected"] == 1].index

@@ -91,8 +91,10 @@ class LM(tfbp.Model):
         # TensorBoard writers.
         train_writer = self.make_summary_writer("train")
         valid_writer = self.make_summary_writer("valid")
+        perpl_writer = self.make_summary_writer("perplexity")
 
         while self.epoch.numpy() < self.hparams.epochs:
+            total_ppx = []
             for batch in train_dataset:
 
                 with tf.GradientTape() as g:
@@ -110,7 +112,12 @@ class LM(tfbp.Model):
                         ),
                         flush=True,
                     )
-
+                    ppxs = tf.math.exp(valid_loss)
+                    for ppx in ppxs:
+                        total_ppx.append(ppx)
+                    
+                    with perpl_writer.as_default():
+                        tf.summary.scalar("perplexity", sum(total_ppx)/len(total_ppx), step=step)
                     with train_writer.as_default():
                         tf.summary.scalar("loss", train_loss, step=step)
                     with valid_writer.as_default():

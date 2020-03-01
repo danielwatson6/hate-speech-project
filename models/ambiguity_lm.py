@@ -91,10 +91,8 @@ class LM(tfbp.Model):
         # TensorBoard writers.
         train_writer = self.make_summary_writer("train")
         valid_writer = self.make_summary_writer("valid")
-        perpl_writer = self.make_summary_writer("perplexity")
 
         while self.epoch.numpy() < self.hparams.epochs:
-            total_ppx = []
             for batch in train_dataset:
 
                 with tf.GradientTape() as g:

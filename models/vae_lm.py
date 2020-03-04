@@ -34,8 +34,8 @@ class VAE(tfbp.Model):
         self.step = tf.Variable(0, trainable=False)
         self.epoch = tf.Variable(0, trainable=False)
 
-        self.encoder = tfkl.Sequential()
-        self.decoder = tfkl.Sequential()
+        self.encoder = tf.keras.Sequential()
+        self.decoder = tf.keras.Sequential()
         for size in self.hparams.hidden_sizes:
             self.encoder.add(tfkl.Dense(size, activation=tf.nn.relu))
             self.decoder.add(tfkl.Dense(size, activation=tf.nn.relu))

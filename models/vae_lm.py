@@ -13,7 +13,7 @@ from IPython import display
 from models import utils
 
 
-@tfbp.default_exportf
+@tfbp.default_export
 class VAE(tfbp.Model):
     default_hparams = {
         "batch_size": 32,

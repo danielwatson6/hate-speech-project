@@ -6,16 +6,14 @@ import tensorflow.keras.layers as tfkl
 
 import boilerplate as tfbp
 
-import glob
 import matplotlib.pyplot as plt
-import PIL
 import imageio
 
 from IPython import display
 from models import utils
 
 
-@tfbp.default_export
+@tfbp.default_exportf
 class VAE(tfbp.Model):
     default_hparams = {
         "batch_size": 32,

@@ -113,7 +113,7 @@ class VAE(tfbp.Model):
         # keeping the random vector constant for generation (prediction) so
         # it will be easier to see the improvement.
         random_vector_for_generation = tf.random.normal(
-            shape=[self.hparams.num_examples_to_generate, self.hparams.latent_dim]
+            shape=[self.hparams.num_examples_to_generate, self.hparams.latent_size]
         )
 
         self.generate_and_save_images(0, random_vector_for_generation)

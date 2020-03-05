@@ -95,19 +95,6 @@ class VAE(tfbp.Model):
         gradients = tape.gradient(loss, self.trainable_variables)
         optimizer.apply_gradients(zip(gradients, self.trainable_variables))
 
-    def generate_and_save_images(self, epoch, test_input):
-        predictions = self.sample(test_input)
-        fig = plt.figure(figsize=(4, 4))
-
-        for i in range(predictions.shape[0]):
-            plt.subplot(4, 4, i + 1)
-            plt.imshow(predictions[i, :, :, 0], cmap="gray")
-            plt.axis("off")
-
-        # tight_layout minimizes the overlap between 2 sub-plots
-        plt.savefig("image_at_epoch_{:04d}.png".format(epoch))
-        plt.show()
-
     @tfbp.runnable
     def fit(self, data_loader):
         # keeping the random vector constant for generation (prediction) so
@@ -116,9 +103,7 @@ class VAE(tfbp.Model):
             shape=[self.hparams.num_examples_to_generate, self.hparams.latent_size]
         )
 
-        self.generate_and_save_images(0, random_vector_for_generation)
-
-        train_data, valid_data = data_loader()
+i        train_data, valid_data = data_loader()
         valid_dataset_infinite = utils.infinite(valid_data)
         optimizer = tf.keras.optimizers.Adam(self.hparams.learning_rate)
 
@@ -131,7 +116,6 @@ class VAE(tfbp.Model):
                 self.compute_apply_gradients(batch, optimizer)
                 train_loss = tf.reduce_mean(self.compute_loss(batch))
                 elbo = -train_loss.result()
-                display.clear_output(wait=False)
                 step = self.step.numpy()
                 if step % 100 == 0:
                     valid_batch = next(valid_dataset_infinite)
@@ -146,9 +130,7 @@ class VAE(tfbp.Model):
                         tf.summary.scalar("loss", train_loss, step=step)
                     with valid_writer.as_default():
                         tf.summary.scalar("loss", valid_loss, step=step)
-            self.generate_and_save_images(
-                self.epoch.numpy(), random_vector_for_generation
-            )
+
             print(f"Epoch {self.epoch.numpy()} finished")
             self.epoch.assign_add(1)
             self.save()

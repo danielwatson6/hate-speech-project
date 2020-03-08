@@ -109,18 +109,22 @@ class LM(tfbp.Model):
                 step = self.step.numpy()
                 if step % 100 == 0:
                     valid_batch = next(valid_dataset_infinite)
-                    valid_loss = tf.reduce_mean(self.loss(valid_batch))
+                    valid_losses = self.loss(valid_batch)
+                    valid_loss = tf.reduce_mean(valid_losses)
                     print(
                         "Step {} (train_loss={:.4f} valid_loss={:.4f})".format(
                             step, train_loss, valid_loss
                         ),
                         flush=True,
                     )
+                    valid_ppx = tf.reduce_mean(tf.math.exp(valid_losses))
+                    
 
                     with train_writer.as_default():
                         tf.summary.scalar("loss", train_loss, step=step)
                     with valid_writer.as_default():
                         tf.summary.scalar("loss", valid_loss, step=step)
+                        tf.summary.scalar("perplexity", valid_ppx, step=step)
 
                 self.step.assign_add(1)
 

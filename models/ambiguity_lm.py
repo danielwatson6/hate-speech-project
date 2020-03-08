@@ -20,6 +20,7 @@ class LM(tfbp.Model):
         "fine_tune_embeds": False,
         "use_lstm": True,  # GRU will be used if set to false.
         "learning_rate": 1e-3,
+        "max_grad_norm": 10.0,
         "epochs": 10,
         # TODO: find a way to make the model not use this. The hash tables for word<->id
         # conversion are immutable and cannot be overwritten as we do with the embedding
@@ -71,13 +72,18 @@ class LM(tfbp.Model):
         # Avoid punishing the model for "wrong" guesses on padded data.
         mask = tf.cast(tf.not_equal(labels, 0), tf.float32)
         masked_loss = self.cross_entropy(labels, probs) * mask
-        # Compute means by correct length.
-        mean_factor = tf.math.reciprocal(tf.reduce_sum(mask, axis=1))
+        # Compute means by correct length, dropping any sequences of length 0.
+        sequence_lengths = tf.reduce_sum(mask, axis=1)
+        mean_factor = tf.map_fn(
+            lambda x: tf.cond(x == 0.0, lambda: 0.0, lambda: 1.0 / x), sequence_lengths
+        )
         return tf.reduce_sum(masked_loss, axis=1) * mean_factor
 
     @tfbp.runnable
     def fit(self, data_loader):
-        opt = tf.optimizers.Adam(self.hparams.learning_rate)
+        opt = tf.optimizers.Adam(
+            self.hparams.learning_rate, clipnorm=self.hparams.max_grad_norm
+        )
 
         # Train/validation split.
         train_dataset, valid_dataset = data_loader()

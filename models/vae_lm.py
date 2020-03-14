@@ -37,11 +37,11 @@ class VAE(tfbp.Model):
         self.encoder = tf.keras.Sequential()
         self.decoder = tf.keras.Sequential()
         for size in self.hparams.hidden_sizes:
-            self.encoder.add(tfkl.Dense(size, activation=tf.nn.relu))
-            self.decoder.add(tfkl.Dense(size, activation=tf.nn.relu))
+            self.encoder.add(tfkl.Dense(size, activation=tf.nn.tanh))
+            self.decoder.add(tfkl.Dense(size, activation=tf.nn.tanh))
 
-        self.encoder.add(tfkl.Dense(self.hparams.latent_size * 2, activation=None))
-        self.decoder.add(tfkl.Dense(28 * 28, activation=None))
+        self.encoder.add(tfkl.Dense(self.hparams.latent_size * 2))
+        self.decoder.add(tfkl.Dense(28 * 28))
 
         # tensorflow tutorial has this input layer...tf.keras.layers.InputLayer(input_shape=(latent_dim,))
 
@@ -55,13 +55,14 @@ class VAE(tfbp.Model):
         return self.decode(s, sigmoid=True)
 
     def encode(self, x):
-        mean, var = tf.split(self.encoder(x), num_or_size_splits=2, axis=1)
+        encoded = self.encoder(x)
+        mean, var = tf.split(encoded, num_or_size_splits=2, axis=1)
         return mean, var
 
     def decode(self, z, sigmoid=False):
         logits = self.decoder(z)
         if sigmoid:
-            probs = tf.sigmoid(logits)
+            probs = tf.math.sigmoid(logits)
             return probs
 
         return logits
@@ -71,23 +72,22 @@ class VAE(tfbp.Model):
         s = tf.random.normal(shape=mean.shape)
         return s * tf.exp(var * 0.5) + mean
 
-    def log_normal_pdf(self, sample, mean, logvar, raxis=1):
-        log2pi = tf.math.log(2.0 * np.pi)
-        return tf.reduce_sum(
-            -0.5 * ((sample - mean) ** 2.0 * tf.exp(-logvar) + logvar + log2pi),
-            axis=raxis,
-        )
+    def kl_to_std_normal(self, mean, logvar):
+        return 0.5 * tf.reduce_sum(-(logvar + 1.0) + tf.math.exp(logvar) + mean ** 2)
 
     def compute_loss(self, x):
         mean, logvar = self.encode(x)
         z = self.reparameterize(mean, logvar)
+        tf.debugging.assert_all_finite(mean, "mean")
+        tf.debugging.assert_all_finite(logvar, "logvar")
+        tf.debugging.assert_all_finite(z, "z")
         x_logit = self.decode(z)
 
         cross_ent = tf.nn.sigmoid_cross_entropy_with_logits(logits=x_logit, labels=x)
-        logpx_z = -tf.reduce_sum(cross_ent, axis=[1, 2, 3])
-        logpz = self.log_normal_pdf(z, 0.0, 0.0)
-        logqz_x = self.log_normal_pdf(z, mean, logvar)
-        return -tf.reduce_mean(logpx_z + logpz - logqz_x)
+        logpx_z = -tf.reduce_sum(cross_ent, axis=1)
+        kl = self.kl_to_std_normal(mean, logvar)
+
+        return tf.reduce_mean(-logpx_z + kl)
 
     def compute_apply_gradients(self, x, optimizer):
         with tf.GradientTape() as tape:
@@ -99,11 +99,11 @@ class VAE(tfbp.Model):
     def fit(self, data_loader):
         # keeping the random vector constant for generation (prediction) so
         # it will be easier to see the improvement.
-        random_vector_for_generation = tf.random.normal(
-            shape=[self.hparams.num_examples_to_generate, self.hparams.latent_size]
-        )
+        # random_vector_for_generation = tf.random.normal(
+        #     shape=[self.hparams.num_examples_to_generate, self.hparams.latent_size]
+        # )
 
-i        train_data, valid_data = data_loader()
+        train_data, valid_data = data_loader()
         valid_dataset_infinite = utils.infinite(valid_data)
         optimizer = tf.keras.optimizers.Adam(self.hparams.learning_rate)
 
@@ -114,15 +114,14 @@ i        train_data, valid_data = data_loader()
         while self.epoch.numpy() < self.hparams.epochs:
             for batch in train_data:
                 self.compute_apply_gradients(batch, optimizer)
-                train_loss = tf.reduce_mean(self.compute_loss(batch))
-                elbo = -train_loss.result()
+                train_loss = self.compute_loss(batch)
                 step = self.step.numpy()
                 if step % 100 == 0:
                     valid_batch = next(valid_dataset_infinite)
-                    valid_loss = tf.reduce_mean(self.compute_loss(valid_batch))
+                    valid_loss = self.compute_loss(valid_batch)
                     print(
-                        "Step {} (train_loss={:.4f} valid_loss={:.4f} elbo = {:.4f})".format(
-                            step, train_loss, valid_loss, elbo
+                        "Step {} (train_loss={:.4f} valid_loss={:.4f})".format(
+                            step, train_loss.numpy(), valid_loss.numpy()
                         ),
                         flush=True,
                     )

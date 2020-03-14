@@ -1,14 +1,11 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+import os
 
-import matplotlib.pyplot as plt
-import numpy as np
+import pandas as pd
 import tensorflow as tf
 
-import tensorflow_datasets as tfds
-
 import boilerplate as tfbp
+
+import tensorflow_datasets as tfds
 
 
 @tfbp.default_export
@@ -20,10 +17,20 @@ class MNIST(tfbp.DataLoader):
     def call(self):
         mnist_builder = tfds.builder("mnist")
         mnist_builder.download_and_prepare()
-        ds_train, ds_test = mnist_builder.as_dataset(split=["train", "test"])
-        ds_train = ds_train.shuffle(1024).batch(self.hparams.batch_size)
-        ds_test = ds_test.shuffle(1024).batch(self.hparams.batch_size)
-        ds_train = ds_train.prefetch(1)
-        ds_test = ds_test.prefetch(1)
-        return ds_train, ds_test
+        datasets = mnist_builder.as_dataset()
 
+        # And then the rest of your input pipeline
+        train_dataset = self._transform_dataset(datasets["train"])
+        test_dataset = self._transform_dataset(datasets["test"])
+
+        return train_dataset, test_dataset
+
+    def _transform_batch(self, batch):
+        batch = tf.cast(batch["image"], tf.float32) / 255.0
+        return tf.reshape(batch, [-1, 28 * 28])
+
+    def _transform_dataset(self, dataset):
+        dataset = dataset.shuffle(10000)
+        dataset = dataset.batch(self.hparams.batch_size)
+        dataset = dataset.map(self._transform_batch)
+        return dataset.prefetch(1)

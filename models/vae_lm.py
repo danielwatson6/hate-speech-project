@@ -1,4 +1,4 @@
-import os
+equeimport os
 
 import numpy as np
 import tensorflow as tf
@@ -18,12 +18,13 @@ class VAE(tfbp.Model):
     default_hparams = {
         "batch_size": 32,
         "hidden_sizes": [512, 512],
-        "latent_size": 2,
+        "latent_size": 3,
         "dropout": 0.0,
         "learning_rate": 1e-3,
         "epochs": 10,
         "num_layers": 2,
-        "num_examples_to_generate": 16,
+        "beta": 0,
+        # reduce sentence by mean or max with number of words using rnn
     }
 
     # Note: it is common to avoid using batch normalization when training VAEs
@@ -87,11 +88,12 @@ class VAE(tfbp.Model):
         logpx_z = -tf.reduce_sum(cross_ent, axis=1)
         kl = self.kl_to_std_normal(mean, logvar)
 
-        return tf.reduce_mean(-logpx_z + kl)
+        return tf.reduce_mean(-logpx_z), tf.reduce_mean(kl)
 
     def compute_apply_gradients(self, x, optimizer):
         with tf.GradientTape() as tape:
-            loss = self.compute_loss(x)
+            re, kl = self.compute_loss(x)
+            loss = re + kl
         gradients = tape.gradient(loss, self.trainable_variables)
         optimizer.apply_gradients(zip(gradients, self.trainable_variables))
 
@@ -114,21 +116,29 @@ class VAE(tfbp.Model):
         while self.epoch.numpy() < self.hparams.epochs:
             for batch in train_data:
                 self.compute_apply_gradients(batch, optimizer)
-                train_loss = self.compute_loss(batch)
+                train_re, train_kl = self.compute_loss(batch)
                 step = self.step.numpy()
                 if step % 100 == 0:
                     valid_batch = next(valid_dataset_infinite)
-                    valid_loss = self.compute_loss(valid_batch)
+                    valid_re, valid_kl = self.compute_loss(valid_batch)
                     print(
-                        "Step {} (train_loss={:.4f} valid_loss={:.4f})".format(
-                            step, train_loss.numpy(), valid_loss.numpy()
+                        "Step {} (train_re={:.4f} train_kl={:.4f}) valid_re={:.4f} valid_kl={:.4f})".format(
+                            step,
+                            train_re.numpy(),
+                            train_kl.numpy(),
+                            valid_re.numpy(),
+                            valid_kl.numpy(),
                         ),
                         flush=True,
                     )
                     with train_writer.as_default():
-                        tf.summary.scalar("loss", train_loss, step=step)
+                        tf.summary.scalar("reconstruction_error", train_re, step=step)
+                        tf.summary.scalar("kl_divergence", train_kl, step=step)
                     with valid_writer.as_default():
-                        tf.summary.scalar("loss", valid_loss, step=step)
+                        tf.summary.scalar("reconstruction_error", valid_re, step=step)
+                        tf.summary.scalar("kl_divergence", valid_kl, step=step)
+
+                self.step.assign_add(1)
 
             print(f"Epoch {self.epoch.numpy()} finished")
             self.epoch.assign_add(1)

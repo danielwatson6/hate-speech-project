@@ -37,14 +37,14 @@ class ImpliednessVAE(tfbp.Model):
         for hs in self.hparams.enc_hidden:
             self.encoder.add(
                 tfkl.Bidirectional(
-                    tfkl.LSMT(hs, dropout=self.hparams.dropout, return_sequence=True)
+                    tfkl.LSTM(hs, dropout=self.hparams.dropout, return_sequences=True)
                 )
             )
         self.encoder.add(tfkl.Dense(600))
 
         for hs in self.hparams.dec_hidden:
             self.decoder.add(
-                tfkl.LSMT(hs, dropout=self.hparams.dropout, return_sequence=True)
+                tfkl.LSTM(hs, dropout=self.hparams.dropout, return_sequences=True)
             )
 
         self.decoder.add(tfkl.Dense(self.hparams.vocab_size))
@@ -55,6 +55,13 @@ class ImpliednessVAE(tfbp.Model):
         return mean, log_var
 
     def decode(self, rnn_inputs, softmax=False):
+        # = E_{z~q(|)} [
+        #   log p(x_2|z,x_1) + log p(x_3|z,x_1,x_2) + ... + log p(x_T|z,x_1,...,x_T-1)
+        # + log p(x_3|z,x_2) ... + log p(x_T|z,x_2,...,x_T-1) + log p(x_1|z,x2,...,x_T)
+        # ...
+        # + log p(x_T|z,x_T-1) + log p(x_1|z,x_T-1,x_T) + ... + log p(x_T-2|z,x_T-1,xT,...,x_T-3)
+        # + log p(x_1|z,x_T) + log p(x_2|z,x_T,x_1) + ... + log p(x_T-1|z,x_T,x1,x_T-2)
+        # ]
         logits = self.decoder(rnn_inputs)
         if softmax:
             return tf.nn.softmax(logits)
@@ -70,28 +77,53 @@ class ImpliednessVAE(tfbp.Model):
         m2, lv2 = q
         # TODO: figure out how to reduce this.
         # https://stats.stackexchange.com/questions/7440/kl-divergence-between-two-univariate-gaussians
-        return 0.5 * (lv2 - lv1 - 1.0) + (
-            tf.math.exp(lv1) * (m1 - m2) ** 2
-        ) * tf.math.reciprocal(2 * tf.math.exp(lv2))
+        return 0.5 * tf.reduce_sum(
+            lv2
+            - lv1
+            - 1.0
+            + tf.math.exp(lv1 - lv2)
+            + tf.math.exp(-lv2) * (m1 - m2) ** 2,
+            axis=-1,
+        )
 
+    # @tf.function
     def compute_loss(self, x):
+        batch_size = tf.shape(mean)[0]
+        eos_tokens = tf.tile([3], [batch_size, 1])
+        x = tf.concat([x, eos_tokens], 1)
+
         x_embedded = self.embed(x)
         mean, logvar = self.encode(x_embedded)
         z = self.reparameterize(mean, logvar)
 
-        batch_size = tf.shape(mean)[0]
-        sos_tokens = tf.tile([[self.embed(2)]], [batch_size, 1, 1])
-        x_shifted = tf.concat([sos_tokens, x_embedded[:, :-1]], 1)
-        rnn_inputs = tf.concat([x_shifted, z], 2)
-
-        x_logit = self.decode(z, rnn_inputs)
-
-        cross_ent = tf.nn.sigmoid_cross_entropy_with_logits(logits=x_logit, labels=x)
-        logpx_z = -tf.reduce_sum(cross_ent, axis=1)
         # TODO
-        kl = self.kl_to_std_normal(mean, logvar)
+        seq_lengths = tf.reduce_sum(tf.cast(tf.not_equal(x, 0), tf.float32), axis=1)
 
-        return tf.reduce_mean(-logpx_z), tf.reduce_mean(kl)
+        total_re = 0.0
+        for i, T in enumerate(seq_lengths):
+            inputs = []
+            labels = []
+            for j in range(T):
+                input_ = []
+                label = []
+                for k in range(T - 1):
+                    input_.append(tf.concat([x_embedded[i, (j + k) % T], z[i, j]], 0))
+                    label.append(x[i, (j + k + 1) % T])
+                inputs.append(input_)
+                labels.append(label)
+
+            logits = self.decoder(inputs)
+            re = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                logits=logits, labels=labels
+            )
+            # TODO: reduce as running average.
+            total_re += tf.reduce_sum(re)
+
+        kl = self.kl_gaussian(
+            [mean, logvar], [x_embedded, tf.math.log(self.hparams.prior_variance)]
+        )
+
+        return total_re, tf.reduce_mean(kl)
 
     def compute_apply_gradients(self, x, optimizer):
         with tf.GradientTape() as tape:

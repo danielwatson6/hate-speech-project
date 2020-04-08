@@ -70,29 +70,27 @@ class LM(tfbp.Model):
             )
 
         # TODO: set weight tying as a boolean hyperparameter
-        # self.forward.add(tfkl.Dense(self.hparams.vocab_size, activation=tf.nn.softmax))
+        self.forward.add(tfkl.Dense(300))
         self.forward.add(tfkl.Lambda(lambda x: x @ self.embed.weights[0]))
-        self.forward.add(tfkl.Dense(self.hparams.vocab_size, activation=tf.nn.softmax))
-
-        self.cross_entropy = tf.losses.SparseCategoricalCrossentropy(
-            reduction=tf.keras.losses.Reduction.NONE
-        )
 
     def call(self, x):
         return self.forward(self.embed(self.word_to_id(x)))
 
     def loss(self, x):
         labels = self.word_to_id(x[:, 1:])
-        probs = self(x[:, :-1])
+        logits = self(x[:, :-1])
         # Avoid punishing the model for "wrong" guesses on padded data.
         mask = tf.cast(tf.not_equal(labels, 0), tf.float32)
-        masked_loss = self.cross_entropy(labels, probs) * mask
+        ce = tf.nn.sparse_softmax_cross_entropy_with_logits(
+            labels=labels, logits=logits
+        )
+        masked_ce = ce * mask
         # Compute means by correct length, dropping any sequences of length 0.
         sequence_lengths = tf.reduce_sum(mask, axis=1)
         mean_factor = tf.map_fn(
             lambda x: tf.cond(x == 0.0, lambda: 0.0, lambda: 1.0 / x), sequence_lengths
         )
-        final_ce = tf.reduce_sum(masked_loss, axis=1) * mean_factor
+        final_ce = tf.reduce_sum(masked_ce, axis=1) * mean_factor
         if self.hparams.l2_penalty > 0:
             l2_loss = sum(tf.nn.l2_loss(v) for v in self.trainable_weights)
             return final_ce + self.hparams.l2_penalty * l2_loss

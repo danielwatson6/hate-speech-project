@@ -17,10 +17,13 @@ class LM(tfbp.Model):
         "vocab_size": 20000,
         "hidden_sizes": [512, 512],
         "dropout": 0.0,
+        "recurrent_dropout": 0.0,
         "fine_tune_embeds": False,
         "use_lstm": True,  # GRU will be used if set to false.
         "learning_rate": 1e-3,
+        "beta_1": 0.9,
         "max_grad_norm": 10.0,
+        "l2_penalty": 0.0,
         "epochs": 10,
         # TODO: find a way to make the model not use this. The hash tables for word<->id
         # conversion are immutable and cannot be overwritten as we do with the embedding
@@ -51,12 +54,24 @@ class LM(tfbp.Model):
             RNN = tfkl.GRU
 
         dropout = 0.0
+        recurrent_dropout = 0.0
         if self.method == "train":
             dropout = self.hparams.dropout
+            recurrent_dropout = self.hparams.recurrent_dropout
 
         for size in self.hparams.hidden_sizes:
-            self.forward.add(RNN(size, dropout=dropout, return_sequences=True))
+            self.forward.add(
+                RNN(
+                    size,
+                    dropout=dropout,
+                    recurrent_dropout=recurrent_dropout,
+                    return_sequences=True,
+                )
+            )
 
+        # TODO: set weight tying as a boolean hyperparameter
+        # self.forward.add(tfkl.Dense(self.hparams.vocab_size, activation=tf.nn.softmax))
+        self.forward.add(tfkl.Lambda(lambda x: x @ self.embed.weights[0]))
         self.forward.add(tfkl.Dense(self.hparams.vocab_size, activation=tf.nn.softmax))
 
         self.cross_entropy = tf.losses.SparseCategoricalCrossentropy(
@@ -77,12 +92,18 @@ class LM(tfbp.Model):
         mean_factor = tf.map_fn(
             lambda x: tf.cond(x == 0.0, lambda: 0.0, lambda: 1.0 / x), sequence_lengths
         )
-        return tf.reduce_sum(masked_loss, axis=1) * mean_factor
+        final_ce = tf.reduce_sum(masked_loss, axis=1) * mean_factor
+        if self.hparams.l2_penalty > 0:
+            l2_loss = sum(tf.nn.l2_loss(v) for v in self.trainable_weights)
+            return final_ce + self.hparams.l2_penalty * l2_loss
+        return final_ce
 
     @tfbp.runnable
     def fit(self, data_loader):
         opt = tf.optimizers.Adam(
-            self.hparams.learning_rate, clipnorm=self.hparams.max_grad_norm
+            self.hparams.learning_rate,
+            beta_1=self.hparams.beta_1,
+            clipnorm=self.hparams.max_grad_norm,
         )
 
         # Train/validation split.
@@ -118,7 +139,6 @@ class LM(tfbp.Model):
                         flush=True,
                     )
                     valid_ppx = tf.reduce_mean(tf.math.exp(valid_losses))
-                    
 
                     with train_writer.as_default():
                         tf.summary.scalar("loss", train_loss, step=step)

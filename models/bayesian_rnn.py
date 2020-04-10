@@ -11,21 +11,21 @@ from models import utils
 
 
 @tfbp.default_export
-class LM(tfbp.Model):
+class BRNN(tfbp.Model):
+    #hyperparameters from Deepmind Sonnet 
     default_hparams = {
-        "batch_size": 32,
-        "vocab_size": 20000,
-        "hidden_sizes": [512, 512],
-        "dropout": 0.0,
-        "fine_tune_embeds": False,
-        "use_lstm": True,  # GRU will be used if set to false.
-        "learning_rate": 1e-3,
-        "max_grad_norm": 10.0,
-        "epochs": 10,
-        # TODO: find a way to make the model not use this. The hash tables for word<->id
-        # conversion are immutable and cannot be overwritten as we do with the embedding
-        # matrix.
-        "vocab_path": "",
+        "batch_size": 20,
+        "embedding_size" : 650,
+        "hidden_size" : 650,
+        "num_layers" : 2,
+        "num_training_epochs" : 70,
+        "unroll_steps" : 35, #truncated bptt unroll length
+        "high_lr_epochs" : 20,
+        "lr_start" : 1.0 #SGD learning rate initialiser,
+        "lr_decay" : 0.9 # polynomial decay power,
+        "dropout" : 0.0,
+        "fine_tune_embeds" : False,
+        "vocab_path" : "",
     }
 
     def __init__(self, *args, **kwargs):
@@ -45,10 +45,10 @@ class LM(tfbp.Model):
 
         self.forward = tf.keras.Sequential()
 
-        if self.hparams.use_lstm:
-            RNN = tfkl.LSTM
-        else:
-            RNN = tfkl.GRU
+        # if self.hparams.use_lstm:
+        #     RNN = tfkl.LSTM
+        # else:
+        #     RNN = tfkl.GRU
 
         dropout = 0.0
         if self.method == "train":

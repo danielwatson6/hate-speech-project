@@ -16,18 +16,35 @@ class BRNN(tfbp.Model):
     default_hparams = {
         "batch_size": 20,
         "embedding_size" : 650,
-        "hidden_size" : 650,
+        "hidden_size" : [650, 650],
         "num_layers" : 2,
         "num_training_epochs" : 70,
+        "use_lstm" : True,
         "unroll_steps" : 35, #truncated bptt unroll length
         "high_lr_epochs" : 20,
         "lr_start" : 1.0 #SGD learning rate initialiser,
         "lr_decay" : 0.9 # polynomial decay power,
         "dropout" : 0.0,
         "fine_tune_embeds" : False,
-        "vocab_path" : "",
+        "vocab_path" : "", 
     }
+    '''
+    The weights of the network, θ, are modeled as hidden random variables instead 
+    of point values. THe algorithm requires a prior p(θ), and a posterior q(θ) which 
+    comprises an approximation of posterior distribution over the model's weights.
 
+    The loss function is to minimize the free energy function, obtained as a lower bound of the 
+    incomplete log likelihood of the data using the variational inference scheme. 
+
+
+    P(w |D ) - posterior 
+    q(w |θ) - varitional posterior
+
+    Varitional Free Energy/ Negative ELBO
+    F(D, θ) = arg minθ KL[q(w|θ) || P(w)] - Eq(w|θ)[log P(D|w)]
+     
+    '''
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.step = tf.Variable(0, trainable=False)
@@ -45,10 +62,10 @@ class BRNN(tfbp.Model):
 
         self.forward = tf.keras.Sequential()
 
-        # if self.hparams.use_lstm:
-        #     RNN = tfkl.LSTM
-        # else:
-        #     RNN = tfkl.GRU
+        if self.hparams.use_lstm:
+            RNN = tfkl.LSTM
+        else:
+            RNN = tfkl.GRU
 
         dropout = 0.0
         if self.method == "train":

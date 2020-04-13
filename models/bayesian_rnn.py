@@ -15,18 +15,18 @@ class BRNN(tfbp.Model):
     #hyperparameters from Deepmind Sonnet 
     default_hparams = {
         "batch_size": 20,
-        "embedding_size" : 650,
-        "hidden_size" : [650, 650],
-        "num_layers" : 2,
-        "num_training_epochs" : 70,
-        "use_lstm" : True,
-        "unroll_steps" : 35, #truncated bptt unroll length
-        "high_lr_epochs" : 20,
-        "lr_start" : 1.0 #SGD learning rate initialiser,
+        "embed_size" : 300,
+        "hidden_size" : 650,
+        "num_layers" : 1,
+        "epochs" : 70,
+        "max_seq_len" : 35, #truncated bptt unroll length
+        "lr" : 1.0 #SGD learning rate initialiser,
         "lr_decay" : 0.9 # polynomial decay power,
-        "dropout" : 0.0,
+        "lr_decay_start" : 20,  # epoch to begin lr decay
         "fine_tune_embeds" : False,
-        "vocab_path" : "", 
+        "vocab_path" : "",
+        "vocab_size" : 20000, 
+        "max_grad_norm" : 10.0,
     }
     '''
     The weights of the network, θ, are modeled as hidden random variables instead 
@@ -49,39 +49,35 @@ class BRNN(tfbp.Model):
         super().__init__(*args, **kwargs)
         self.step = tf.Variable(0, trainable=False)
         self.epoch = tf.Variable(0, trainable=False)
+        self.lr = tf.Variable(self.hparams.lr, trainable=False)
 
         # TODO: find a way to make the model not use this.
         if not self.hparams.vocab_path:
             raise ValueError("Please specify --vocab_path=path/to/vocab.tsv")
         self.word_to_id, self.id_to_word = utils.make_word_id_maps(
             self.hparams.vocab_path, self.hparams.vocab_size,
-        )
+        )   
 
-        self.embed = tfkl.Embedding(self.hparams.vocab_size, 300)
-        self.embed.trainable = self.hparams.fine_tune_embeds
+        self.embed = tfkl.Embedding(self.hparams.vocab_size, self.hparams.embed_size)
+        self.embed.trainable = False
 
-        self.forward = tf.keras.Sequential()
+        self.theta = tf.keras.Sequential()
+        for _ in range(self.hparams.num_layers):
+            self.theta.add(tfkl.LSTM(self.hparams.hidden_size, return_sequences=True))
+        self.theta.add(tfkl.Dense(self.hparams.embed_size))
+        self.theta.build([None, None, self.hparams.embed_size])
+        
+        self.d_theta = tf.reduce_sum([tf.reduce_prod(t.shape) for t in self.theta.trainable_weights])
 
-        if self.hparams.use_lstm:
-            RNN = tfkl.LSTM
-        else:
-            RNN = tfkl.GRU
+        self.mu = tf.Variable(tf.tile([0.0], [self.d_theta]))
+        self.sigma = tf.Variable(tf.tile([1.0], [self.d_theta]))
 
-        dropout = 0.0
-        if self.method == "train":
-            dropout = self.hparams.dropout
-
-        for size in self.hparams.hidden_sizes:
-            self.forward.add(RNN(size, dropout=dropout, return_sequences=True))
-
-        self.forward.add(tfkl.Dense(self.hparams.vocab_size, activation=tf.nn.softmax))
-
-        self.cross_entropy = tf.losses.SparseCategoricalCrossentropy(
-            reduction=tf.keras.losses.Reduction.NONE
+        self.opt = tf.optimizers.Adam(
+            self.hparams.lr, clipnorm=self.hparams.max_grad_norm
         )
 
     def call(self, x):
-        return self.forward(self.embed(self.word_to_id(x)))
+        return self.theta(self.embed(self.word_to_id(x)))
 
     def loss(self, x):
         labels = self.word_to_id(x[:, 1:])
@@ -94,14 +90,34 @@ class BRNN(tfbp.Model):
         mean_factor = tf.map_fn(
             lambda x: tf.cond(x == 0.0, lambda: 0.0, lambda: 1.0 / x), sequence_lengths
         )
-        return tf.reduce_sum(masked_loss, axis=1) * mean_factor
+        return tf.reduce_sum(masked_loss, axis=1) * mean_factor + ... # TODO : add KL divergence term
+    
+    def flatten_weights(self, weights):
+        return tf.concat([tf.reshape(t, [-1]) for t in weights], 0)
+
+    def unflatten_weights(self, weights):
+        shapes = [t.shape for t in self.theta.trainable_weights]
+        weights = tf.split(weights, [tf.reduce_prod(shape) for shape in shapes])
+        weights = [tf.reshape(t, shape) for t, shape in zip(weights, shapes)]
+        return weights
+
+    def train_step(self, x):
+        # 1. Sample from the variational posterior.
+        epsilon = tf.random.normal([self.d_theta])
+        theta = self.unflatten_weights(self.mu + self.sigma * epsilon)
+        # 2. Set neural net parameters.
+        self.theta.set_weights(theta)
+        # 3. Forward and backward pass.
+        with tf.GradientTape(watch_accessed_variables=False) as g:
+            g.watch(self.theta.trainable_weights)
+            loss = self.loss(x)
+
+        g_theta = self.flatten_weights(g.gradient(loss, self.theta.trainable_weights))
+        self.opt.apply_gradients([g_theta, self.mu]))
+        self.opt.apply_gradients([g_theta * epsilon, self.sigma])
 
     @tfbp.runnable
     def fit(self, data_loader):
-        opt = tf.optimizers.Adam(
-            self.hparams.learning_rate, clipnorm=self.hparams.max_grad_norm
-        )
-
         # Train/validation split.
         train_dataset, valid_dataset = data_loader()
         valid_dataset_infinite = utils.infinite(valid_dataset)
@@ -118,10 +134,7 @@ class BRNN(tfbp.Model):
         while self.epoch.numpy() < self.hparams.epochs:
             for batch in train_dataset:
 
-                with tf.GradientTape() as g:
-                    train_loss = tf.reduce_mean(self.loss(batch))
-                grads = g.gradient(train_loss, self.trainable_weights)
-                opt.apply_gradients(zip(grads, self.trainable_weights))
+                self.train_step(batch)
 
                 step = self.step.numpy()
                 if step % 100 == 0:
@@ -147,6 +160,8 @@ class BRNN(tfbp.Model):
 
             print(f"Epoch {self.epoch.numpy()} finished")
             self.epoch.assign_add(1)
+            if self.epoch >= self.hparams.lr_decay_start:
+                self.lr.assign(self.lr * self.hparams.lr_decay)
             self.save()
 
     @tfbp.runnable

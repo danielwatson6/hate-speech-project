@@ -1,6 +1,7 @@
 """Language model for measuring ambiguity."""
 
 import os
+from time import time
 
 import numpy as np
 import tensorflow as tf
@@ -55,7 +56,7 @@ class LM(tfbp.Model):
 
         dropout = 0.0
         recurrent_dropout = 0.0
-        if self.method == "train":
+        if self.method == "fit":
             dropout = self.hparams.dropout
             recurrent_dropout = self.hparams.recurrent_dropout
 
@@ -71,7 +72,7 @@ class LM(tfbp.Model):
 
         # TODO: set weight tying as a boolean hyperparameter
         self.forward.add(tfkl.Dense(300))
-        self.forward.add(tfkl.Lambda(lambda x: x @ self.embed.weights[0]))
+        self.forward.add(tfkl.Lambda(lambda x: x @ tf.transpose(self.embed.weights[0])))
 
     def call(self, x):
         return self.forward(self.embed(self.word_to_id(x)))
@@ -127,12 +128,13 @@ class LM(tfbp.Model):
 
                 step = self.step.numpy()
                 if step % 100 == 0:
+                    t0 = time()
                     valid_batch = next(valid_dataset_infinite)
                     valid_losses = self.loss(valid_batch)
                     valid_loss = tf.reduce_mean(valid_losses)
                     print(
-                        "Step {} (train_loss={:.4f} valid_loss={:.4f})".format(
-                            step, train_loss, valid_loss
+                        "Step {} ({:.4f}s, train_loss={:.4f} valid_loss={:.4f})".format(
+                            step, time() - t0, train_loss, valid_loss
                         ),
                         flush=True,
                     )

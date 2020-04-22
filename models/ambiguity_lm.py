@@ -34,7 +34,7 @@ class LM(tfbp.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.step = tf.Variable(0, trainable=False)
+        self.step = tf.Variable(0, trainable=False, dtype=tf.int64)
         self.epoch = tf.Variable(0, trainable=False)
 
         # TODO: find a way to make the model not use this.
@@ -70,16 +70,23 @@ class LM(tfbp.Model):
                 )
             )
 
-        # TODO: set weight tying as a boolean hyperparameter
-        self.forward.add(tfkl.Dense(300))
+        self.forward.add(tfkl.Dense(self.hparams.vocab_size))
+
+        self.opt = tf.optimizers.Adam(
+            self.hparams.learning_rate,
+            beta_1=self.hparams.beta_1,
+            clipnorm=self.hparams.max_grad_norm,
+        )
 
     def call(self, x):
-        rnn_outputs = self.forward(self.embed(self.word_to_id(x)))
-        return rnn_outputs @ tf.transpose(self.embed.weights[0])
+        return self.forward(self.embed(self.word_to_id(x)))
 
-    def loss(self, x):
+    def loss_and_output(self, x):
         labels = self.word_to_id(x[:, 1:])
         logits = self(x[:, :-1])
+
+        output = self.id_to_word(tf.math.argmax(logits, axis=-1))
+
         # Avoid punishing the model for "wrong" guesses on padded data.
         mask = tf.cast(tf.not_equal(labels, 0), tf.float32)
         ce = tf.nn.sparse_softmax_cross_entropy_with_logits(
@@ -95,60 +102,60 @@ class LM(tfbp.Model):
         if self.hparams.l2_penalty > 0:
             l2_loss = sum(tf.nn.l2_loss(v) for v in self.trainable_weights)
             return final_ce + self.hparams.l2_penalty * l2_loss
-        return final_ce
+        return final_ce, output
+
+    @tf.function
+    def fit_epoch(self, train_dataset, valid_dataset):
+
+        for batch in train_dataset:
+
+            t0 = tf.timestamp()
+            with tf.GradientTape() as g:
+                losses, _ = self.loss_and_output(batch)
+                train_loss = tf.reduce_mean(losses)
+            grads = g.gradient(train_loss, self.trainable_weights)
+            self.opt.apply_gradients(zip(grads, self.trainable_weights))
+            t1 = tf.timestamp()
+
+            if self.step % 100 == 0:
+
+                valid_batch = next(valid_dataset)
+                valid_losses, valid_output = self.loss_and_output(valid_batch)
+                valid_loss = tf.reduce_mean(valid_losses)
+                valid_ppx = tf.reduce_mean(tf.math.exp(valid_losses))
+
+                tf.print("step", self.step)
+                tf.print("  train step time", t1 - t0)
+                tf.print("  train_loss", train_loss)
+                tf.print("  valid_loss", valid_loss)
+
+                with self.train_writer.as_default():
+                    tf.summary.scalar("loss", train_loss, step=self.step)
+                with self.valid_writer.as_default():
+                    tf.summary.scalar("loss", valid_loss, step=self.step)
+                    tf.summary.scalar("perplexity", valid_ppx, step=self.step)
+
+            self.step.assign_add(1)
 
     @tfbp.runnable
     def fit(self, data_loader):
-        opt = tf.optimizers.Adam(
-            self.hparams.learning_rate,
-            beta_1=self.hparams.beta_1,
-            clipnorm=self.hparams.max_grad_norm,
-        )
 
         # Train/validation split.
         train_dataset, valid_dataset = data_loader()
-        valid_dataset_infinite = utils.infinite(valid_dataset)
+        valid_dataset = utils.infinite(valid_dataset)
 
         # Initialize the embedding matrix after building the model.
         if self.step.numpy() == 0:
-            self(next(valid_dataset_infinite))
+            self(next(valid_dataset))
             utils.initialize_embeds(self.embed, data_loader.embedding_matrix)
 
         # TensorBoard writers.
-        train_writer = self.make_summary_writer("train")
-        valid_writer = self.make_summary_writer("valid")
+        self.train_writer = self.make_summary_writer("train")
+        self.valid_writer = self.make_summary_writer("valid")
 
-        while self.epoch.numpy() < self.hparams.epochs:
-            for batch in train_dataset:
-
-                with tf.GradientTape() as g:
-                    train_loss = tf.reduce_mean(self.loss(batch))
-                grads = g.gradient(train_loss, self.trainable_weights)
-                opt.apply_gradients(zip(grads, self.trainable_weights))
-
-                step = self.step.numpy()
-                if step % 100 == 0:
-                    t0 = time()
-                    valid_batch = next(valid_dataset_infinite)
-                    valid_losses = self.loss(valid_batch)
-                    valid_loss = tf.reduce_mean(valid_losses)
-                    print(
-                        "Step {} ({:.4f}s, train_loss={:.4f} valid_loss={:.4f})".format(
-                            step, time() - t0, train_loss, valid_loss
-                        ),
-                        flush=True,
-                    )
-                    valid_ppx = tf.reduce_mean(tf.math.exp(valid_losses))
-
-                    with train_writer.as_default():
-                        tf.summary.scalar("loss", train_loss, step=step)
-                    with valid_writer.as_default():
-                        tf.summary.scalar("loss", valid_loss, step=step)
-                        tf.summary.scalar("perplexity", valid_ppx, step=step)
-
-                self.step.assign_add(1)
-
-            print(f"Epoch {self.epoch.numpy()} finished")
+        while self.epoch < self.hparams.epochs:
+            self.fit_epoch(train_dataset, valid_dataset)
+            tf.print(f"Epoch {self.epoch} finished")
             self.epoch.assign_add(1)
             self.save()
 
@@ -168,7 +175,8 @@ class LM(tfbp.Model):
     def _evaluate(self, dataset):
         total_ppx = []
         for batch in dataset:
-            ppxs = tf.math.exp(self.loss(batch))
+            losses, _ = self.loss_and_output(batch)
+            ppxs = tf.math.exp(losses)
             for ppx in ppxs:
                 total_ppx.append(ppx)
         print("{:.4f}".format(sum(total_ppx) / len(total_ppx)))

@@ -101,7 +101,7 @@ class LM(tfbp.Model):
         final_ce = tf.reduce_sum(masked_ce, axis=1) * mean_factor
         if self.hparams.l2_penalty > 0:
             l2_loss = sum(tf.nn.l2_loss(v) for v in self.trainable_weights)
-            return final_ce + self.hparams.l2_penalty * l2_loss
+            return final_ce + self.hparams.l2_penalty * l2_loss, output
         return final_ce, output
 
     @tf.function

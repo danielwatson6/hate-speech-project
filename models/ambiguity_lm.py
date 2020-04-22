@@ -70,12 +70,15 @@ class LM(tfbp.Model):
                 )
             )
 
-        self.forward.add(tfkl.Dense(self.hparams.vocab_size))
+        self.forward.add(tfkl.Dense(self.hparams.vocab_size, activation=tf.nn.softmax))
 
         self.opt = tf.optimizers.Adam(
             self.hparams.learning_rate,
             beta_1=self.hparams.beta_1,
             clipnorm=self.hparams.max_grad_norm,
+        )
+        self.cross_entropy = tf.losses.SparseCategoricalCrossentropy(
+            reduction=tf.keras.losses.Reduction.NONE
         )
 
     def call(self, x):
@@ -83,22 +86,19 @@ class LM(tfbp.Model):
 
     def loss_and_output(self, x):
         labels = self.word_to_id(x[:, 1:])
-        logits = self(x[:, :-1])
-
-        output = self.id_to_word(tf.math.argmax(logits, axis=-1))
-
+        probs = self(x[:, :-1])
         # Avoid punishing the model for "wrong" guesses on padded data.
         mask = tf.cast(tf.not_equal(labels, 0), tf.float32)
-        ce = tf.nn.sparse_softmax_cross_entropy_with_logits(
-            labels=labels, logits=logits
-        )
-        masked_ce = ce * mask
+        masked_ce = self.cross_entropy(labels, probs) * mask
         # Compute means by correct length, dropping any sequences of length 0.
         sequence_lengths = tf.reduce_sum(mask, axis=1)
         mean_factor = tf.map_fn(
             lambda x: tf.cond(x == 0.0, lambda: 0.0, lambda: 1.0 / x), sequence_lengths
         )
         final_ce = tf.reduce_sum(masked_ce, axis=1) * mean_factor
+
+        output = self.id_to_word(tf.math.argmax(probs, axis=-1))
+
         if self.hparams.l2_penalty > 0:
             l2_loss = sum(tf.nn.l2_loss(v) for v in self.trainable_weights)
             return final_ce + self.hparams.l2_penalty * l2_loss, output
@@ -162,7 +162,7 @@ class LM(tfbp.Model):
     @tfbp.runnable
     def ambiguity(self, data_loader):
         for x in data_loader():
-            probs = tf.nn.softmax(self(x[:, :-1]))
+            probs = self(x[:, :-1])
             nlog_probs = -tf.math.log(probs)
             nplogp = probs * nlog_probs
 

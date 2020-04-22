@@ -72,10 +72,10 @@ class LM(tfbp.Model):
 
         # TODO: set weight tying as a boolean hyperparameter
         self.forward.add(tfkl.Dense(300))
-        self.forward.add(tfkl.Lambda(lambda x: x @ tf.transpose(self.embed.weights[0])))
 
     def call(self, x):
-        return self.forward(self.embed(self.word_to_id(x)))
+        rnn_outputs = self.forward(self.embed(self.word_to_id(x)))
+        return rnn_outputs @ tf.transpose(self.embed.weights[0])
 
     def loss(self, x):
         labels = self.word_to_id(x[:, 1:])
@@ -155,8 +155,7 @@ class LM(tfbp.Model):
     @tfbp.runnable
     def ambiguity(self, data_loader):
         for x in data_loader():
-            probs = self(x[:, :-1])
-            # nlog_probs = -tf.math.log(probs + 1e-8)
+            probs = tf.nn.softmax(self(x[:, :-1]))
             nlog_probs = -tf.math.log(probs)
             nplogp = probs * nlog_probs
 
